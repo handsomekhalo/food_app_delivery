@@ -59,6 +59,19 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'food_app_backend.urls'
 
 
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+
+    ),
+    'EXPIRY_MINUTES': 30,  # Token will expire after 30 minutes
+
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+
 
 TEMPLATES = [
     {
@@ -153,3 +166,4 @@ WHITENOISE_ROOT = os.path.join(BASE_DIR, 'food_app_frontend', 'build')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# AUTH_USER_MODEL = 'system_management.User'
