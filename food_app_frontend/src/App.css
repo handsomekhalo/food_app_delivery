@@ -1,38 +1,181 @@
-.App {
+/* Reset styles */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+}
+
+.landing-page {
   text-align: center;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
-}
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
+.navbar {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background-color: #fff;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.navbar .logo {
+  font-weight: bold;
+  font-size: 1.5rem;
+}
+
+.navbar .logo span {
+  color: #f04f23;
+}
+
+.nav-links {
+  list-style: none;
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-links li {
+  cursor: pointer;
+}
+
+.log-in-btn {
+  background-color: #f04f23;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+
+.hero-section {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+  padding: 2rem;
+  background-color: #f7f7f7;
+}
+
+.hero-text {
+  flex: 1;
+  text-align: left;
+}
+
+.hero-text h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.hero-text .highlight {
+  color: #f04f23;
+}
+
+.hero-text .search-bar {
+  margin: 1rem 0;
+  display: flex;
+  width: 80%;
+}
+
+.hero-text .search-bar input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 5px 0 0 5px;
+
+}
+
+.hero-text .search-bar button {
+  background-color: #f04f23;
   color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 0 5px 5px 0;
+
 }
 
-.App-link {
-  color: #61dafb;
+.hero-text .customer-reviews {
+  margin: 1rem 0;
 }
 
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.hero-text .download-app {
+  display: flex;
+  gap: 1rem;
+}
+
+.app-btn {
+  background-color: #333;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 5px;
+}
+
+.hero-image {
+  flex: 1;
+}
+
+.hero-image img {
+  max-width: 80%;
+  height: auto;
+}
+
+
+
+{/* LOGIN SECTION */}
+
+/* Full-page background image */
+.login-container {
+  background-image: url('./images/ella.jpg'); /* Replace with your image URL */
+  background-size: cover;
+  background-position: center;
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+}
+
+/* Wrapper for the login form */
+.login-form-wrapper {
+  background-color: rgba(255, 255, 255, 0.9); /* White background with transparency */
+  padding: 20px 40px;
+  border-radius: 10px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.25);
+  text-align: center;
+}
+
+/* Form title */
+.login-title {
+  margin-bottom: 20px;
+  font-size: 24px;
+  color: #333;
+}
+
+/* Form input fields */
+.form-group {
+  margin-bottom: 15px;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+/* Checkbox alignment */
+.form-group input[type='checkbox'] {
+  margin-right: 5px;
+}
+
+/* Submit button */
+.btn-primary {
+  background-color: #f04f23;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 100%;
+  font-size: 16px;
+}
+
+.btn-primary:hover {
+  background-color: #f04f23;
 }
