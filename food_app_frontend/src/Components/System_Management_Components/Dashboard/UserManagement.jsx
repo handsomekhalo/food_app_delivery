@@ -10,7 +10,7 @@ const UserManagement = () => {
 
   useEffect(() => {
     const fetchAdmins = async () => {
-      const token = localStorage .getItem("authToken"); // Fetch token
+      const token = localStorage.getItem("authToken"); // Fetch token
       console.log("Fetched token from sessionStorage:", token);
 
       if (!token) {

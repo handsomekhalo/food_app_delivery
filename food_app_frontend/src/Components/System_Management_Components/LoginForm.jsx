@@ -1,36 +1,46 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import {useAuth} from '../../AuthContext'
 
 const LoginForm = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [rememberMe, setRememberMe] = useState(false);
+  const { login: authLogin } = useAuth(); // Rename the login function from context to authLogin
+  const [formData, setFormData] = useState({
+    username: '',
+    password: '',
+    rememberMe: false,
+  });
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value,
+    }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-  
-    if (!username || !password) {
-      setError('Both fields are required.');
-      return;
-    }
+    setError('');
+    setIsSubmitting(true);
   
     try {
-      // Get CSRF token from cookies
+      // Get the CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
-        .find(row => row.startsWith('csrftoken='))
+        .find((row) => row.startsWith('csrftoken='))
         ?.split('=')[1];
   
-      // Call the Django business logic layer
+      // Send login request
       const response = await axios.post(
-        '/system_management/login/',  // This should match your Django URLs
-        { 
-          email: username,  // Using username field as email since that's what backend expects
-          password, 
-          rememberMe 
+        '/system_management/login/',
+        {
+          email: formData.username,
+          password: formData.password,
+          rememberMe: formData.rememberMe,
         },
         {
           headers: {
@@ -40,35 +50,38 @@ const LoginForm = () => {
         }
       );
   
+      // Check if login was successful
       if (response.data.status === 'success') {
-        setError('');
-        // Store the token if it's returned
-        if (response.data.data?.token) {
-          console.log('Storing Token:'); // Console log for the token
-
-          const token = response.data.data.token;
-          console.log('Login successful. Token:', token); // Console log for the token
-          localStorage.setItem('authToken', token);
-          
-          console.log('Token stored in localStorage:', localStorage.getItem('authToken')); // Check if it's stored
-
+        // Parse the stringified JSON data
+        const parsedData = JSON.parse(response.data.data);
+        const { token, first_login, user } = parsedData;
+  
+        console.log('response', response);
+  
+        // Store the token and user data
+        if (token) {
+          await authLogin(token); // Pass token to the AuthContext
+  
+          // Optionally store user data in localStorage or elsewhere if needed
+          localStorage.setItem('user', JSON.stringify(user));
+  
+          // Optionally handle first login or other user-specific logic
+          console.log('First login:', first_login);
+          console.log('User data:', user);
+  
+          // Redirect to dashboard or handle post-login logic
+          navigate('/dashboard');
+        } else {
+          setError('No token received from server.');
         }
-        
-        navigate('/dashboard');
       } else {
         setError(response.data.message || 'Login failed. Please try again.');
       }
-    } catch (error) {
-      let errorMessage = 'An error occurred. Please try again.';
-      
-      if (error.response?.data?.message) {
-        errorMessage = error.response.data.message;
-      } else if (error.response?.data?.error) {
-        errorMessage = error.response.data.error;
-      }
-      
-      setError(errorMessage);
-      console.error('Login error:', error.response || error);
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err.response?.data?.message || 'An error occurred. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -77,37 +90,64 @@ const LoginForm = () => {
     <div className="login-container">
       <div className="login-form-wrapper">
         <h2 className="login-title">Sign In</h2>
-        {error && <div className="alert alert-danger">{error}</div>}
-        <form onSubmit={handleSubmit}>
+        {error && <div className="alert alert-danger" role="alert">{error}</div>}
+        <form onSubmit={handleSubmit} noValidate>
+          {/* Username Input */}
           <div className="form-group">
+            <label htmlFor="username" className="form-label">
+              Username
+            </label>
             <input
+              id="username"
+              name="username"
               type="text"
               className="form-control"
-              placeholder="Username"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              placeholder="Enter your username"
+              value={formData.username}
+              onChange={handleInputChange}
+              required
             />
           </div>
+
+          {/* Password Input */}
           <div className="form-group">
+            <label htmlFor="password" className="form-label">
+              Password
+            </label>
             <input
+              id="password"
+              name="password"
               type="password"
               className="form-control"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              value={formData.password}
+              onChange={handleInputChange}
+              required
             />
           </div>
-          <div className="form-group">
+
+          {/* Remember Me Checkbox */}
+          <div className="form-group form-check">
             <input
-              type="checkbox"
               id="rememberMe"
-              checked={rememberMe}
-              onChange={() => setRememberMe(!rememberMe)}
+              name="rememberMe"
+              type="checkbox"
+              className="form-check-input"
+              checked={formData.rememberMe}
+              onChange={handleInputChange}
             />
-            <label htmlFor="rememberMe">Remember Me</label>
+            <label htmlFor="rememberMe" className="form-check-label">
+              Remember Me
+            </label>
           </div>
-          <button type="submit" className="btn btn-primary">
-            Login
+
+          {/* Submit Button */}
+          <button
+            type="submit"
+            className="btn btn-primary"
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>

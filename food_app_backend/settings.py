@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'system_management',
+        'corsheaders',
+
 ]
 
 MIDDLEWARE = [
@@ -53,7 +55,9 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     #for manifest.json
-    'whitenoise.middleware.WhiteNoiseMiddleware'
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+        'corsheaders.middleware.CorsMiddleware',
+
 ]
 
 ROOT_URLCONF = 'food_app_backend.urls'
@@ -101,6 +105,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # React frontend
+]
 
 WSGI_APPLICATION = 'food_app_backend.wsgi.application'
 

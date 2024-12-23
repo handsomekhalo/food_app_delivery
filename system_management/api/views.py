@@ -55,7 +55,7 @@ def login_api(request):
     Login api for user authentication
     Args:
         request:
-    Returns:
+    Returns:    
         Response:
         data:
             - status
@@ -64,10 +64,7 @@ def login_api(request):
     """
     if request.method == "POST":
     
-        print('inside API')
         body = json.loads(request.body)
-        print('body',body)
-
         email = body["email"]
         password = body["password"]
 
@@ -206,7 +203,6 @@ def get_users_api(request):
         # admin_user_type = UserType.objects.get(name=constants.ADMIN)
     
         users = User.objects.all()
-        print('users',users)
 
         serializer = UserModelSerializer(users, many=True).data
 

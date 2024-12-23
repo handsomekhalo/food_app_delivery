@@ -97,6 +97,8 @@ def login(request):
             
             if response_data.status_code == 200:
                 response_json = response_data.json()
+
+                print('response_json',response_json)
                 
                 # Store token in session if remember_me is True
                 # if remember_me and 'token' in response_json:
@@ -106,6 +108,7 @@ def login(request):
                     'status': 'success', 
                     'data': response_json
                 })
+            
             
             return JsonResponse({
                 'status': 'error',

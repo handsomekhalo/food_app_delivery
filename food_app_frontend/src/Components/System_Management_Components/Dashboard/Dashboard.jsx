@@ -1,10 +1,30 @@
-import React from 'react';
-import SideBar from './SideBar'; // Corrected import statement
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import SideBar from './SideBar';
+import { useAuth } from '../../../AuthContext';
 
 export const Dashboard = () => {
+  const { authToken, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    console.log('Auth state:', { authToken, isAuthenticated });
+    if (!authToken) {
+      console.log('No token available, redirecting to login.');
+      navigate('/login'); // Redirect to login if no token
+    }
+  }, [authToken, navigate]);
+
+  if (!authToken) {
+    return <div>Loading...</div>; // Render a loading state temporarily
+  }
+
   return (
     <div className="dashboard">
-      <SideBar /> 
+      <SideBar />
+      <h1>Welcome to the Dashboard</h1>
     </div>
   );
 };
+
+export default Dashboard;
