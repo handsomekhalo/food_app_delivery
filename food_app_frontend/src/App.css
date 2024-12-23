@@ -179,3 +179,112 @@ body {
 .btn-primary:hover {
   background-color: #f04f23;
 }
+
+
+{/*SIDE BAR */}
+
+/* .sidebar {
+  margin-top: 100px;
+  background-color: #dad6d6; 
+  width: 250px; 
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 15px;
+  padding: 20px;
+  box-sizing: border-box;
+} */
+.sidebar {
+  margin-top: 100px;
+  background-color: #dad6d6; /* Sidebar background */
+  width: 250px; /* Sidebar width */
+  height: 100%; /* Match the viewport height */
+  position: absolute; /* Sidebar stays in place */
+  top: 0;
+  left: 15px; /* Offset from the left */
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+
+
+.sidebar .logo {
+  color: #fff;
+  margin-bottom: 20px;
+}
+
+.menu {
+  list-style: none;
+  padding: 0;
+}
+
+.menu li {
+  margin-bottom: 10px;
+}
+
+.menu a {
+  color: #fff;
+  text-decoration: none;
+  display: block;
+  padding: 10px;
+  border-radius: 5px;
+}
+
+.menu a:hover {
+  background-color: #555;
+}
+
+
+{/*User management  */}
+
+
+
+
+.admin-management {
+  display: flex;
+  height: 100vh;
+
+}
+
+.container-fluid {
+  margin-left: 250px; /* Adjust based on sidebar width */
+  padding: 20px;
+  flex: 1;
+}
+
+.table {
+  width: 100%;
+}
+
+.table-hover tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+
+/* Ensure the sidebar stays in place */
+
+
+/* To style the content area next to the sidebar */
+.content-area {
+  margin-left: 270px; /* Offset the content from the sidebar */
+  padding: 20px;
+}
+
+.content-area h2 {
+  margin-top: 20px;
+}
+
+/* Optional: Alert styling */
+.alert-info {
+  margin-top: 20px;
+}
+
+/* Optional: Form padding */
+.form-label, .form-control {
+  margin-bottom: 10px;
+}
+
+
+.custom-input {
+  width: 50%; /* Adjust the width as needed */
+}

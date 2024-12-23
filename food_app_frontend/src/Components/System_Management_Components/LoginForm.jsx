@@ -11,19 +11,19 @@ const LoginForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+  
     if (!username || !password) {
       setError('Both fields are required.');
       return;
     }
-
+  
     try {
       // Get CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
         .find(row => row.startsWith('csrftoken='))
         ?.split('=')[1];
-
+  
       // Call the Django business logic layer
       const response = await axios.post(
         '/system_management/login/',  // This should match your Django URLs
@@ -39,13 +39,21 @@ const LoginForm = () => {
           },
         }
       );
-
+  
       if (response.data.status === 'success') {
         setError('');
         // Store the token if it's returned
         if (response.data.data?.token) {
-          localStorage.setItem('authToken', response.data.data.token);
+          console.log('Storing Token:'); // Console log for the token
+
+          const token = response.data.data.token;
+          console.log('Login successful. Token:', token); // Console log for the token
+          localStorage.setItem('authToken', token);
+          
+          console.log('Token stored in localStorage:', localStorage.getItem('authToken')); // Check if it's stored
+
         }
+        
         navigate('/dashboard');
       } else {
         setError(response.data.message || 'Login failed. Please try again.');
@@ -63,6 +71,7 @@ const LoginForm = () => {
       console.error('Login error:', error.response || error);
     }
   };
+  
 
   return (
     <div className="login-container">

@@ -6,16 +6,18 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 
-
 urlpatterns = [
-    # Your custom login view
-      # Handle manifest.json
-    # path('manifest.json',
-    #      RedirectView.as_view(url=staticfiles_storage.url('manifest.json')),
-    #      name='manifest.json'),
+
 
     path('login_view/', views.login_view, name='login_view'),
-    # path('login/', views.login, name='login'),
+    path('login/', views.login, name='login'),
+    path('get_all_users/', views.get_all_users, name='get_all_users'),
+    re_path(r'^.*$', views.serve_react),  # Catch-all route for React
 
-#   re_path(r'^.*$', TemplateView.as_view(template_name='index.html')),
+
+      
+
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+
+
+

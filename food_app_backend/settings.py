@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'rest_framework.authtoken',
+    'rest_framework_simplejwt',
     'system_management',
-
 ]
 
 MIDDLEWARE = [
@@ -61,7 +61,7 @@ ROOT_URLCONF = 'food_app_backend.urls'
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
 
     ),
     'EXPIRY_MINUTES': 30,  # Token will expire after 30 minutes
@@ -70,6 +70,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
 }
+
 
 
 
@@ -96,7 +97,10 @@ TEMPLATES = [
 
 
 
-
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+]
+CORS_ALLOW_CREDENTIALS = True
 
 WSGI_APPLICATION = 'food_app_backend.wsgi.application'
 
@@ -166,4 +170,4 @@ WHITENOISE_ROOT = os.path.join(BASE_DIR, 'food_app_frontend', 'build')
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-# AUTH_USER_MODEL = 'system_management.User'
+AUTH_USER_MODEL = 'system_management.User'
