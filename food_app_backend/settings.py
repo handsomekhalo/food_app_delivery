@@ -49,6 +49,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+        'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -56,8 +57,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     #for manifest.json
     'whitenoise.middleware.WhiteNoiseMiddleware',
-        'corsheaders.middleware.CorsMiddleware',
-
+    
 ]
 
 ROOT_URLCONF = 'food_app_backend.urls'
@@ -101,14 +101,6 @@ TEMPLATES = [
 
 
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",
-]
-CORS_ALLOW_CREDENTIALS = True
-
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # React frontend
-]
 
 WSGI_APPLICATION = 'food_app_backend.wsgi.application'
 
@@ -177,5 +169,25 @@ WHITENOISE_ROOT = os.path.join(BASE_DIR, 'food_app_frontend', 'build')
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
+SESSION_COOKIE_SECURE = True
+# CSRF_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = False
+
+SECURE_HSTS_SECONDS = 31536000
+CSRF_COOKIE_HTTPONLY = False
+CSRF_COOKIE_SAMESITE = 'None'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 AUTH_USER_MODEL = 'system_management.User'
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",  # React frontend
+]
+
+CSRF_TRUSTED_ORIGINS = [ 'http://localhost:3000', 'http://127.0.0.1:3000', ]
+
+CSRF_COOKIE_NAME = 'csrftoken'
+CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
+CSRF_COOKIE_DOMAIN = 'localhost'

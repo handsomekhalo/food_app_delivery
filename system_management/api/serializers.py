@@ -83,3 +83,26 @@ class UserTypeModelSerializer(serializers.ModelSerializer):
             'id',
             'name'
         )
+
+
+class CreateUserSerializer(serializers.ModelSerializer):
+    user_type_id = serializers.IntegerField()
+    user_created_by_id = serializers.IntegerField(required=False)
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'password', 'user_type_id', 'user_created_by_id']
+
+    def create(self, validated_data):
+        user_type_id = validated_data.pop('user_type_id')
+        user_created_by_id = validated_data.pop('user_created_by_id', None)
+        user_type = UserType.objects.get(id=user_type_id)
+        user = User.objects.create_user(user_type=user_type, user_created_by_id=user_created_by_id, **validated_data)
+        return user
+
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Profile
+        fields = ['phone_number', 'suburb', 'city', 'province', 'postal_code']

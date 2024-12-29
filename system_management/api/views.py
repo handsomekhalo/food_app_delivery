@@ -11,11 +11,15 @@ The following api is stored here:
 
 
 import json
+from django.forms import ValidationError
 from rest_framework.response import Response
 import random
 
 from rest_framework.permissions import AllowAny
 from rest_framework.authtoken.models import Token
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.db import transaction 
+
 
 from django.contrib.auth import authenticate
 from rest_framework import (
@@ -28,6 +32,8 @@ from datetime import datetime, timedelta
 from rest_framework.authtoken.models import Token
 
 from system_management.api.serializers import (
+    CreateUserSerializer,
+    ProfileSerializer,
     UserModelSerializer,
     UserTypeModelSerializer,
 )
@@ -197,11 +203,6 @@ def get_users_api(request):
             status code:
     """
     if request.method == "GET":
-        # Get the user type for CAO
-        # cao_user_type = UserType.objects.get(name=constants.COMMUNITY_ADVISORY_OFFICER)
-        # attorney_user_type = UserType.objects.get(name=constants.ATTORNEY)
-        # admin_user_type = UserType.objects.get(name=constants.ADMIN)
-    
         users = User.objects.all()
 
         serializer = UserModelSerializer(users, many=True).data
@@ -226,3 +227,138 @@ def get_users_api(request):
             'message': "Invalid request method."
         })
         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(["POST"])
+def create_user_api(request):
+    """
+    Create user API
+    
+    Args:
+        request: HTTP request with user data
+    Returns:
+        Response:
+            data:
+                - status
+                - message
+            status code
+    """
+    try:
+        if request.method != "POST":
+            data = json.dumps({
+                'status': "error",
+                'message': "Method not allowed"
+            })
+            return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+        # Validate request body
+        try:
+            body = json.loads(request.body)
+
+            print('body', body)
+        except json.JSONDecodeError:
+            data = json.dumps({
+                'status': "error",
+                'message': "Invalid JSON in request body"
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        # Validate serializer data
+        serializer = CreateUserSerializer(data=body)
+        if not serializer.is_valid():
+            data = json.dumps({
+                'status': "error",
+                'message': "Validation error",
+                'errors': serializer.errors
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        # Extract validated data with null checks
+        validated_data = serializer.validated_data
+        user_type_id = validated_data.get('user_type_id')
+        if not user_type_id:
+            data = json.dumps({
+                'status': "error",
+                'message': "user_type_id is required"
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        first_name = validated_data.get('first_name')
+        last_name = validated_data.get('last_name')
+
+        email = validated_data.get('email')
+        if not email:
+            data = json.dumps({
+                'status': "error",
+                'message': "email is required"
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        user_created_by_id = validated_data.get('user_created_by_id')
+        password = validated_data.get('password')
+        if not password:
+            data = json.dumps({
+                'status': "error",
+                'message': "password is required"
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        # Check if email exists
+        if User.objects.filter(email=email).exists():
+            data = json.dumps({
+                'status': "error",
+                'message': f"User with email {email} already exists."
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        # Get user type with error handling
+        try:
+            user_type = UserType.objects.get(id=user_type_id)
+        except ObjectDoesNotExist:
+            data = json.dumps({
+                'status': "error",
+                'message': f"UserType with id {user_type_id} does not exist."
+            })
+            return Response(data, status.HTTP_400_BAD_REQUEST)
+
+        # Create user with transaction
+        with transaction.atomic():
+            # Create user
+            user = User.objects.create_user(
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                user_type=user_type,
+                password=password,
+                user_created_by_id=user_created_by_id
+            )
+
+            # Create profile
+            Profile.objects.create(
+                suburb=constants.EMPTY,
+                city=constants.EMPTY,
+                province=constants.EMPTY,
+                postal_code=constants.EMPTY,
+                user=user
+            )
+
+            data = json.dumps({
+                'status': "success",
+                'message': "User created successfully.",
+                'user_type': str(user_type.name).lower()
+            })
+            return Response(data, status.HTTP_201_CREATED)
+
+    except ValidationError as e:
+        data = json.dumps({
+            'status': "error",
+            'message': str(e)
+        })
+        return Response(data, status.HTTP_400_BAD_REQUEST)
+
+    except Exception as e:
+        data = json.dumps({
+            'status': "error",
+            'message': f"An unexpected error occurred: {str(e)}"
+        })
+        return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)

@@ -1,3 +1,6 @@
+import secrets
+import string
+import threading
 from turtle import pd
 from django.shortcuts import render
 from django.http import JsonResponse
@@ -10,11 +13,11 @@ from rest_framework.authtoken.models import Token
 import json
 import requests
 from rest_framework.response import Response
-
+from django.middleware.csrf import get_token
 from system_management import constants
 from system_management.api.serializers import UserTypeModelSerializer
 from system_management.decorators import check_token_in_session, session_timeout
-from system_management.general_func_classes import api_connection, host_url
+from system_management.general_func_classes import _send_email_thread, api_connection, host_url
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
@@ -39,6 +42,27 @@ def get_data_on_success(response_data):
     return data
 
 
+def generate_password(length=12, include_digits=True, include_special_chars=True):
+    letters = string.ascii_letters
+    digits = string.digits if include_digits else ''
+    special_chars = string.punctuation if include_special_chars else ''
+
+    characters = letters + digits + special_chars
+
+    length = max(length, 8)
+
+    password = ''.join(secrets.choice(characters) for _ in range(length))
+
+    return password
+
+
+
+def set_csrf_token(request):
+     response = JsonResponse({'detail': 'CSRF cookie set'})
+     response.set_cookie('csrftoken', get_token(request)) 
+     return response
+
+@ensure_csrf_cookie     
 def login_view(request):
     """User login function with API."""
 
@@ -50,7 +74,6 @@ def login_view(request):
 
 
 
-@ensure_csrf_cookie  # This ensures the CSRF cookie is set
 def login(request):
     """User login function with API."""
     if request.method != "POST":
@@ -97,8 +120,6 @@ def login(request):
             
             if response_data.status_code == 200:
                 response_json = response_data.json()
-
-                print('response_json',response_json)
                 
                 # Store token in session if remember_me is True
                 # if remember_me and 'token' in response_json:
@@ -148,50 +169,55 @@ def serve_react(request):
         )
 
 
-     
-# @session_timeout
-# @check_token_in_session
-@ensure_csrf_cookie 
-# @csrf_exempt
-
+@session_timeout
+@check_token_in_session
 def get_all_users(request):
-    print('Executing get_all_users view...')
-
-    # Log headers, body, and other metadata from the request
-    print('Request method:', request.method)
-    print('Request headers:', dict(request.headers))  # Log headers
-    print('Session token:', request.session.get("token"))  # Log session token
-    print('Request body:', request.body.decode('utf-8'))  # Log raw request body
-
+    
     if request.method == "GET":
         """Returns all user information for user management template."""
         try:
+            # user =request.data
+
+            token = request.session.get("token")
+            token = request.headers.get("Authorization", "").split("Token ")[-1]
+
+            if token:
+                    request.session["token"] = token
+                    request.session.modified = True
+
+            if not token:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "Token not found in session or headers"
+                })
+
             # API call to fetch users
             url = f"{host_url(request)}{reverse('get_users_api')}"
-            print(f'Calling API: {url}')
 
-            payload = json.dumps({})
+            payload = json.dumps({
+                'token': token  # Adding token to payload
+            })
+
             headers = {
-                'Authorization': f'Token {request.session.get("token")}',
+                'Authorization': f'Token {token}',
                 'Content-Type': constants.JSON_APPLICATION
             }
 
             response_data = api_connection(method="GET", url=url, headers=headers, data=payload)
-            print('First API response:', response_data)
 
             users = []
             if response_data.get('status') == 'success':
                 users = response_data.get('users', [])
+                print('users',users)
 
             # API call to fetch user types
             url = f"{host_url(request)}{reverse('get_user_types_api')}"
-            print(f'Calling API: {url}')
             response_data = api_connection(method="GET", url=url, headers=headers, data=payload)
-            print('Second API response:', response_data)
 
             roles = []
             if response_data.get('status') == 'success':
                 roles = response_data.get('user_types', [])
+                print('roles',roles)
 
             return JsonResponse({
                 'status': 'success',
@@ -210,3 +236,66 @@ def get_all_users(request):
         'status': 'error',
         'message': 'Invalid request method'
     })
+
+
+@session_timeout
+@check_token_in_session
+def create_user(request):
+    """User registration function for the creation of new users by admin"""
+    if request.method == 'POST':
+        user_type_id = request.POST.get('user_type')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
+        email = request.POST.get('user_email')
+        user_created_by_id = request.session.get('user_id')
+        password = generate_password()
+
+        url = f"{host_url(request)}{reverse('create_user_api')}"
+        payload = json.dumps({
+            "user_type_id": user_type_id,
+            "first_name": first_name,
+            "last_name": last_name,
+            "email": email,
+            "password": password,
+        })
+
+        headers = {
+            'Authorization': f'Token {request.session.get("token")}',
+            'Content-Type': constants.JSON_APPLICATION
+        }
+        response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+        status = response_data.get('status')
+
+        if status == 'success':
+            # Determine the email template based on user type
+            if user_type_id == '1':
+                html_tpl_path = "email_temps/admin_credentials.html"
+            elif user_type_id == '3':
+                html_tpl_path = "email_temps/cao_credentials.html"
+            elif user_type_id == '2':
+                html_tpl_path = "email_temps/attorney_credentials.html"
+            else:
+                html_tpl_path = "email_temps/user_credentials.html"
+            subject = "New User Registration"
+            login_url = f"{host_url(request)}{reverse('login_view')}"
+            receiver_email = email
+            context_data = {
+                "login_url": login_url,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "password": password
+            }
+
+            url = f"{host_url(request)}{reverse('send_email_api')}"
+            payload = json.dumps({
+                "html_tpl_path": html_tpl_path,
+                "receiver_email": receiver_email,
+                "context_data": context_data,
+                "subject": subject,
+            })
+
+            thread = threading.Thread(target=_send_email_thread, args=(url, headers, payload))
+            thread.start()
+
+        return JsonResponse(data=response_data, safe=False)

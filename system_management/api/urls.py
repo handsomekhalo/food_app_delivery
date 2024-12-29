@@ -10,4 +10,5 @@ urlpatterns = [
    path('login_api/', views.login_api, name="login_api"),
    path('get_user_types_api/', views.get_user_types_api, name="get_user_types_api"),
    path('get_users_api/', views.get_users_api, name="get_users_api"),
+   path('create_user_api/', views.create_user_api, name="create_user_api"),
 ]

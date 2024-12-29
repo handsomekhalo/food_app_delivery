@@ -1,86 +1,68 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import SideBar from "./SideBar";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../../../AuthContext";
 
 const UserManagement = () => {
+  const { authToken, isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    console.log('[UserManagement] Auth state:', { authToken, isAuthenticated });
+  
+    if (!authToken || !isAuthenticated) {
+      console.log('[UserManagement] No token or not authenticated, redirecting to login.');
+      setLoading(false);
+      navigate('/login');
+      return;
+    }
+  
     const fetchAdmins = async () => {
-      const token = localStorage.getItem("authToken"); // Fetch token
-      console.log("Fetched token from sessionStorage:", token);
-
-      if (!token) {
-        console.error("No token found. User may not be authenticated.");
-        setError("You are not authenticated. Please log in.");
-        setLoading(false);
-        return;
-      }
-
       try {
         const response = await axios.get("/system_management/get_all_users/", {
           headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json",
+            'Authorization': `Token ${authToken}`, // Ensure token format
+            'Content-Type': 'application/json',
           },
         });
-
-        // Log the response for debugging
-        console.log("Fetch Admins Response:", response.data);
-
-        // Check if response has the expected structure
-        if (response.data && response.data.status === "success") {
-          const users = response.data.users || [];
-          setAdmins(users);
+  
+        console.log('[UserManagement] API Response:', response.data);
+  
+        if (response.data?.status === "success") {
+          setAdmins(response.data.users || []);
         } else {
-          setError("Failed to load user data: " + (response.data.message || "Unknown error"));
+          throw new Error(response.data?.message || "Failed to fetch users");
         }
       } catch (err) {
-        console.error("Error fetching users:", err);
-        setError("Failed to load user data: " + (err.message || "Network error"));
+        console.error('[UserManagement] Error:', err);
+  
+        if (err.response?.status === 401) {
+          navigate('/login');
+        } else {
+          setError(err.message || "Failed to load users");
+        }
       } finally {
         setLoading(false);
       }
     };
-
+  
     fetchAdmins();
-  }, []);
+  }, [authToken, isAuthenticated, navigate]);
+  
 
-  const handleDelete = async (id) => {
-    const token = localStorage.getItem("token"); // Fetch token for delete operation
-    console.log("Fetched token for delete operation:", token);
-
-    if (!token) {
-      alert("You are not authenticated. Please log in.");
-      return;
-    }
-
-    if (window.confirm("Are you sure you want to delete this user?")) {
-      try {
-        const response = await axios.delete(`/system_management/delete_user/${id}/`, {
-          headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        // Log the response for debugging
-        console.log("Delete User Response:", response.data);
-
-        if (response.data && response.data.status === "success") {
-          setAdmins((prev) => prev.filter((admin) => admin.id !== id));
-        } else {
-          throw new Error(response.data.message || "Failed to delete user");
-        }
-      } catch (err) {
-        console.error("Error deleting user:", err);
-        alert("Failed to delete user: " + (err.message || "Unknown error"));
-      }
-    }
-  };
+  if (loading) {
+    return (
+      <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+        <div className="spinner-border" role="status">
+          <span className="visually-hidden">Loading...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="admin-management d-flex">
@@ -91,17 +73,11 @@ const UserManagement = () => {
           <Link to="/add-admin" className="btn btn-primary">Add User</Link>
         </div>
 
-        {loading ? (
-          <div className="text-center">
-            <div className="spinner-border" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        ) : error ? (
+        {error ? (
           <div className="alert alert-danger" role="alert">
             {error}
           </div>
-        ) : !Array.isArray(admins) || admins.length === 0 ? (
+        ) : !admins.length ? (
           <div className="alert alert-info" role="alert">
             No users found.
           </div>
@@ -118,37 +94,31 @@ const UserManagement = () => {
                 </tr>
               </thead>
               <tbody>
-                {admins.map((admin, index) => (
-                  <tr key={admin.id || index}>
-                    <td>{index + 1}</td>
-                    <td>{admin.full_name}</td>
-                    <td>{admin.email}</td>
-                    <td>{admin.role || admin.user_type}</td>
-                    <td>
-                      <div className="btn-group" role="group">
-                        <Link
-                          to={`/update-password/${admin.id}`}
-                          className="btn btn-primary btn-sm"
-                        >
-                          Change Password
-                        </Link>
-                        <Link
-                          to={`/update-admin/${admin.id}`}
-                          className="btn btn-secondary btn-sm ms-2"
-                        >
-                          Update
-                        </Link>
-                        <button
-                          className="btn btn-danger btn-sm ms-2"
-                          onClick={() => handleDelete(admin.id)}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
+  {admins.map((admin, index) => (
+    <tr key={admin.id}>
+      <td>{index + 1}</td>
+      <td>{`${admin.first_name} ${admin.last_name}`}</td>
+      <td>{admin.email}</td>
+      <td>{admin.user_type__name}</td>
+      <td>
+        <div className="btn-group" role="group">
+          <Link
+            to={`/update-password/${admin.id}`}
+            className="btn btn-primary btn-sm"
+          >
+            Change Password
+          </Link>
+          <Link
+            to={`/update-admin/${admin.id}`}
+            className="btn btn-secondary btn-sm ms-2"
+          >
+            Update
+          </Link>
+        </div>
+      </td>
+    </tr>
+  ))}
+</tbody>
             </table>
           </div>
         )}
