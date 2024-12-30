@@ -35,10 +35,12 @@ from system_management.api.serializers import (
     CreateUserSerializer,
     ProfileSerializer,
     UserModelSerializer,
+    UserResetPasswordSerializer,
     UserTypeModelSerializer,
 )
 from system_management.models import (
     # OneTimePin,
+    OneTimePin,
     User,
     UserType,
     Profile,
@@ -255,7 +257,6 @@ def create_user_api(request):
         try:
             body = json.loads(request.body)
 
-            print('body', body)
         except json.JSONDecodeError:
             data = json.dumps({
                 'status': "error",
@@ -362,3 +363,101 @@ def create_user_api(request):
             'message': f"An unexpected error occurred: {str(e)}"
         })
         return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(["POST"])
+def first_time_login_reset_api(request):
+    """
+    first time login api for user change password
+    Args:
+        request:
+    Returns:
+        Response:
+        data:
+            - status
+            - message
+        status code:
+    """
+    if request.method == "POST":
+
+        body = json.loads(request.body)
+
+        serializer = UserResetPasswordSerializer(data=body)
+
+        if not serializer.is_valid():
+            response_data = json.dumps({
+                'status': 'error',
+                'message': f'Invalid request',
+                'data': str(serializer.errors)
+            })
+            return Response(response_data, status=status.HTTP_400_BAD_REQUEST)
+
+        validated_data = serializer.validated_data
+        
+        new_password = validated_data["new_password"]
+        confirm_password = validated_data["confirm_password"]
+        user_id = validated_data["user_id"]
+
+        if new_password != confirm_password:
+            response_data = json.dumps({
+                'status': 'error',
+                'message': f'password and confirm password do not match!'
+            })
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            user = User.objects.get(pk=user_id)
+
+        except User.DoesNotExist:
+            response_data = json.dumps({
+                'status': 'error',
+                'message': f'User not found for id: {user_id}'
+            })
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        user.set_password(new_password)
+        user.save()
+
+        try:
+            profile = Profile.objects.get(user=user)
+
+        except Profile.DoesNotExist:
+            response_data = json.dumps({
+                'status': 'error',
+                'message': f'Profile not found for id: {user_id}'
+            })
+            return Response(response_data, status=status.HTTP_404_NOT_FOUND)
+
+        if not profile.first_login:
+            profile.first_login = True
+            profile.save()
+        
+        user_number = profile.phone_number
+        
+        otp = ''.join([str(random.randint(0, 9)) for _ in range(5)])
+
+        OneTimePin.objects.update_or_create(
+            user_id=user.id,
+            defaults={
+                'pin': otp
+            }
+        )
+        data = {
+            'user': UserModelSerializer(user).data,
+            'user_number': user_number,
+            'new_pin': otp
+        }
+        response_data = json.dumps({
+            "status": "success",
+            'data': data,
+            'message': 'Password changed successfully.'
+        })
+
+        return Response(response_data, status=status.HTTP_200_OK)
+
+    else:
+        data = json.dumps({
+            'status': "error",
+            'message': constants.INVALID_REQUEST_METHOD
+        })
+        return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)

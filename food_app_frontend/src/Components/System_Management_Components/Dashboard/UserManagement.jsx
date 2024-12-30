@@ -23,7 +23,9 @@ const UserManagement = () => {
   
     const fetchAdmins = async () => {
       try {
-        const response = await axios.get("/system_management/get_all_users/", {
+        ///system_management/get_all_users/"
+        const response = await axios.get("http://localhost:8000/system_management/get_all_users/", {
+         
           headers: {
             'Authorization': `Token ${authToken}`, // Ensure token format
             'Content-Type': 'application/json',

@@ -3,6 +3,7 @@
 System management api serializers for cleaning incoming and outgoing data
 """
 from rest_framework import serializers
+from system_management.general_func_classes import BaseFormSerializer
 from system_management.models import User, UserType, Profile
 
 class UserModelSerializer(serializers.ModelSerializer):
@@ -59,7 +60,7 @@ class UserModelSerializer(serializers.ModelSerializer):
 
 
 class ProfileModelSerializer(serializers.ModelSerializer):
-    lockout_start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
+    # lockout_start_time = serializers.DateTimeField(format="%Y-%m-%d %H:%M:%S")
     class Meta:
         """Metaclass for profile model serializer."""
         model = Profile
@@ -68,9 +69,9 @@ class ProfileModelSerializer(serializers.ModelSerializer):
             'city',
             'suburb',
             'province',
-            'first_login',
-            'lockout_start_time',
-            'remaining_attempts'
+            # 'first_login',
+            # 'lockout_start_time',
+            # 'remaining_attempts'
         )
 
 class UserTypeModelSerializer(serializers.ModelSerializer):
@@ -106,3 +107,31 @@ class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Profile
         fields = ['phone_number', 'suburb', 'city', 'province', 'postal_code']
+
+
+
+class UserResetPasswordSerializer(BaseFormSerializer):
+    new_password = serializers.CharField(
+        max_length=250,
+        required=True,
+        error_messages={
+            'required': 'The new password field is required.',
+            'max_length': 'The new password field must be less than 250 characters.'
+        }
+    )
+    confirm_password = serializers.CharField(
+        max_length=250,
+        required=True,
+        error_messages={
+            'required': 'The confirm password field is required.',
+            'max_length': 'The confirm password field must be less than 250 characters.'
+        }
+    )
+    user_id = serializers.IntegerField(
+        required=True,
+        read_only=False,
+        write_only=False,
+        error_messages={
+            'required': 'The user id field is required.',
+        }
+    )

@@ -171,8 +171,8 @@ WHITENOISE_ROOT = os.path.join(BASE_DIR, 'food_app_frontend', 'build')
 
 SESSION_COOKIE_SECURE = True
 # CSRF_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = False
-
+CSRF_COOKIE_SECURE = False 
+CORS_ALLOW_ALL_ORIGINS = True 
 SECURE_HSTS_SECONDS = 31536000
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'None'
@@ -186,8 +186,13 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React frontend
 ]
 
-CSRF_TRUSTED_ORIGINS = [ 'http://localhost:3000', 'http://127.0.0.1:3000', ]
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
+]
 
 CSRF_COOKIE_NAME = 'csrftoken'
 CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
-CSRF_COOKIE_DOMAIN = 'localhost'
+CORS_ORIGIN_ALLOW_ALL = False  # Keep this False for security

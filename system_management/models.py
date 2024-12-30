@@ -56,6 +56,22 @@ class User(AbstractUser):
         return self.email
 
 
+class OneTimePin(models.Model):
+    """A model for the one time pin used for two step verification."""
+    pin = models.CharField(max_length=6)
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+    date_modified = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        """Metaclass for one time pin class"""
+        verbose_name = "One Time Pin"
+        verbose_name_plural = "One Time Pins"
+
+    def __str__(self):
+        return f"{self.user}'s one time pin"
+    
+
 class Profile(models.Model):
     """Additional details for users."""
     phone_number = models.CharField(max_length=10)

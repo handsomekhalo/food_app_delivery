@@ -34,8 +34,9 @@ const AddAdmin = () => {
 
       try {
         console.log("Making request with token:", token); // Debug log
-        
-        const response = await axios.get("/system_management/get_all_users/", {
+        ///system_management/get_all_users/
+        const response = await axios.get("http://localhost:8000/system_management/get_all_users/", {
+      
           headers: {
             "Authorization": `Token ${token}`,
             "Content-Type": "application/json",
@@ -91,7 +92,8 @@ const AddAdmin = () => {
 
     try {
       const response = await axios.post(
-        "/system_management/get_all_users/",
+        //system_management/get_all_users
+        "http://localhost:8000/system_management/get_all_users/",
         {
           full_name: fullName,
           email,

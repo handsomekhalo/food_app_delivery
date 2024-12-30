@@ -74,6 +74,7 @@ def login_view(request):
 
 
 
+@ensure_csrf_cookie  # This ensures the CSRF cookie is set
 def login(request):
     """User login function with API."""
     if request.method != "POST":
@@ -169,15 +170,85 @@ def serve_react(request):
         )
 
 
-@session_timeout
 @check_token_in_session
+def first_time_login_view(request):
+    """first time User login function with api."""
+
+    if request.method == "GET":
+        return render(request, 'registration/first_time_login_reset.html')
+
+    if request.method == "POST":
+        token = request.session.get('token')
+        user_id = request.session.get('user_id')
+        new_password = request.POST.get('new_password')
+        confirm_password = request.POST.get('confirm_password')
+
+        if new_password != confirm_password:
+            return JsonResponse(
+                {'success': False, 'error': 'New and confirm passwords do not match'})
+
+        url = f"{host_url(request)}{reverse('first_time_login_reset_api')}"
+
+        payload = json.dumps({
+            "new_password": new_password,
+            "confirm_password": confirm_password,
+            "user_id": user_id
+        })
+
+        headers = {
+            'Authorization': f'Token {token}',
+            'Content-Type': constants.JSON_APPLICATION,
+        }
+
+        response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+        response_status = response_data.get('status')
+
+        if response_status == 'success':
+            data = response_data.get('data')
+            # user_number = data.get('user_number')
+            new_pin = data.get('new_pin')
+            user = data.get('user')
+
+            url = f"{host_url(request)}{reverse('send_email_api')}"
+            html_tpl_path = "email_temps/otp_email.html"
+            subject = "User Authentication"
+
+            receiver_email = user['email']
+            current_first_name = user['first_name']
+            current_last_name = user['last_name']
+            context_data = {
+                "first_name": current_first_name,
+                "last_name": current_last_name,
+                "otp": new_pin,
+            }
+
+            payload = json.dumps({
+                "html_tpl_path": html_tpl_path,
+                "receiver_email": receiver_email,
+                "context_data": context_data,
+                "subject": subject,
+            })
+
+            # thread = threading.Thread(target=_send_email_thread, args=(url, headers, payload))
+            # thread.start()
+
+            # if test_number(user_number):
+            #     phone_number = format_phone_number(user_number)
+            #     thread = threading.Thread(target=send_otp, args=(new_pin, phone_number))
+            #     thread.start()
+
+        return JsonResponse(data=response_data, safe=False)
+    
+
+
+# @session_timeout
+# @check_token_in_session
 def get_all_users(request):
     
     if request.method == "GET":
         """Returns all user information for user management template."""
         try:
             # user =request.data
-
             token = request.session.get("token")
             token = request.headers.get("Authorization", "").split("Token ")[-1]
 
@@ -208,7 +279,6 @@ def get_all_users(request):
             users = []
             if response_data.get('status') == 'success':
                 users = response_data.get('users', [])
-                print('users',users)
 
             # API call to fetch user types
             url = f"{host_url(request)}{reverse('get_user_types_api')}"
@@ -217,7 +287,6 @@ def get_all_users(request):
             roles = []
             if response_data.get('status') == 'success':
                 roles = response_data.get('user_types', [])
-                print('roles',roles)
 
             return JsonResponse({
                 'status': 'success',
@@ -226,7 +295,6 @@ def get_all_users(request):
             })
 
         except Exception as e:
-            print('Error in get_all_users:', str(e))
             return JsonResponse({
                 'status': 'error',
                 'message': str(e)

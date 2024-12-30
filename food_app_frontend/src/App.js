@@ -10,6 +10,7 @@ import SideBar from './Components/System_Management_Components/Dashboard/SideBar
 import UserManagement from './Components/System_Management_Components/Dashboard/UserManagement';
 import AddAdmin from './Components/System_Management_Components/Dashboard/AddAdmin';
 import { AuthProvider } from './AuthContext';
+// import UpdateUserModal from './Components/System_Management_Components/Dashboard/UpdateUserComponent';
 
 function App() {
   return (
@@ -27,6 +28,7 @@ function App() {
             <Route path="/sidebar" element={<SideBar />} /> {/* Side bar */}
             <Route path="/user_management" element={<UserManagement />} />
             <Route path="/add-admin" element={<AddAdmin />} />
+            {/* <Route path="/add-admin" element={<UpdateUserModal />} /> */}
           </Routes>
         </div>
       </AuthProvider>
