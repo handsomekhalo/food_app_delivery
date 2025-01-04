@@ -3,58 +3,80 @@ import axios from "axios";
 import SideBar from "./SideBar";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../../AuthContext";
+import UpdateUserModal from "./UpdateUserModal";
+
+const fetchUsers = async (authToken) => {
+  const response = await axios.get("http://localhost:8000/system_management/get_all_users/", {
+    headers: { Authorization: `Token ${authToken}` },
+  });
+  if (response.data?.status === "success") {
+    return response.data.users || [];
+  }
+  throw new Error(response.data?.message || "Failed to fetch users");
+};
+
+const fetchRoles = async (authToken) => {
+  const response = await axios.get("http://localhost:8000/system_management/get_roles/", {
+    headers: { Authorization: `Token ${authToken}` },
+  });
+  if (response.data?.status === "success") {
+    return response.data.roles || [];
+  }
+  throw new Error(response.data?.message || "Failed to fetch roles");
+};
+
+const updateUser = async (authToken, updatedUser) => {
+  await axios.put(
+    `http://localhost:8000/system_management/update_user/${updatedUser.id}/`,
+    updatedUser,
+    {
+      headers: { Authorization: `Token ${authToken}` },
+    }
+  );
+};
 
 const UserManagement = () => {
   const { authToken, isAuthenticated } = useAuth();
   const navigate = useNavigate();
   const [admins, setAdmins] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [selectedUser, setSelectedUser] = useState(null);
 
   useEffect(() => {
-    console.log('[UserManagement] Auth state:', { authToken, isAuthenticated });
-  
     if (!authToken || !isAuthenticated) {
-      console.log('[UserManagement] No token or not authenticated, redirecting to login.');
-      setLoading(false);
-      navigate('/login');
+      navigate("/login");
       return;
     }
-  
-    const fetchAdmins = async () => {
+
+    const fetchData = async () => {
       try {
-        ///system_management/get_all_users/"
-        const response = await axios.get("http://localhost:8000/system_management/get_all_users/", {
-         
-          headers: {
-            'Authorization': `Token ${authToken}`, // Ensure token format
-            'Content-Type': 'application/json',
-          },
-        });
-  
-        console.log('[UserManagement] API Response:', response.data);
-  
-        if (response.data?.status === "success") {
-          setAdmins(response.data.users || []);
-        } else {
-          throw new Error(response.data?.message || "Failed to fetch users");
-        }
+        const [users, roles] = await Promise.all([fetchUsers(authToken), fetchRoles(authToken)]);
+        setAdmins(users);
+        setRoles(roles);
       } catch (err) {
-        console.error('[UserManagement] Error:', err);
-  
-        if (err.response?.status === 401) {
-          navigate('/login');
-        } else {
-          setError(err.message || "Failed to load users");
-        }
+        console.error("[UserManagement] Error:", err);
+        setError(err.message || "Failed to load data");
       } finally {
         setLoading(false);
       }
     };
-  
-    fetchAdmins();
+
+    fetchData();
   }, [authToken, isAuthenticated, navigate]);
-  
+
+  const handleUpdateUser = async (updatedUser) => {
+    try {
+      await updateUser(authToken, updatedUser);
+      setAdmins((prev) =>
+        prev.map((admin) => (admin.id === updatedUser.id ? updatedUser : admin))
+      );
+    } catch (error) {
+      console.error("Error updating user:", error);
+      setError(error.message || "Failed to update user");
+    }
+  };
 
   if (loading) {
     return (
@@ -72,7 +94,9 @@ const UserManagement = () => {
       <div className="container-fluid p-4" style={{ marginLeft: "250px", flex: 1 }}>
         <div className="d-flex justify-content-between align-items-center mb-4">
           <h2>User Management</h2>
-          <Link to="/add-admin" className="btn btn-primary">Add User</Link>
+          <Link to="/add-admin" className="btn btn-primary">
+            Add User
+          </Link>
         </div>
 
         {error ? (
@@ -96,35 +120,35 @@ const UserManagement = () => {
                 </tr>
               </thead>
               <tbody>
-  {admins.map((admin, index) => (
-    <tr key={admin.id}>
-      <td>{index + 1}</td>
-      <td>{`${admin.first_name} ${admin.last_name}`}</td>
-      <td>{admin.email}</td>
-      <td>{admin.user_type__name}</td>
-      <td>
-        <div className="btn-group" role="group">
-          <Link
-            to={`/update-password/${admin.id}`}
-            className="btn btn-primary btn-sm"
-          >
-            Change Password
-          </Link>
-          <Link
-            to={`/update-admin/${admin.id}`}
-            className="btn btn-secondary btn-sm ms-2"
-          >
-            Update
-          </Link>
-        </div>
-      </td>
-    </tr>
-  ))}
-</tbody>
+                {admins.map((admin, index) => (
+                  <tr key={admin.id}>
+                    <td>{index + 1}</td>
+                    <td>{`${admin.first_name} ${admin.last_name}`}</td>
+                    <td>{admin.email}</td>
+                    <td>{admin.user_type__name}</td>
+                    <td>
+                      <button
+                        className="btn btn-primary btn-sm"
+                        onClick={() => setSelectedUser(admin)}
+                      >
+                        Update
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         )}
       </div>
+
+      <UpdateUserModal
+        show={!!selectedUser}
+        onClose={() => setSelectedUser(null)}
+        user={selectedUser}
+        roles={roles}
+        onUpdate={handleUpdateUser}
+      />
     </div>
   );
 };

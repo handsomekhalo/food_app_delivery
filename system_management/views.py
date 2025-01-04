@@ -11,6 +11,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.authtoken.models import Token
 import json
+from django.contrib.auth.hashers import make_password
+
 import requests
 from rest_framework.response import Response
 from django.middleware.csrf import get_token
@@ -30,7 +32,9 @@ from rest_framework import (
     authentication
 )
 
-from system_management.models import UserType
+from system_management.models import User, UserType
+from system_management.general_func_classes import host_url, api_connection,_send_email_thread
+
 
 
 def get_data_on_success(response_data):
@@ -243,6 +247,7 @@ def first_time_login_view(request):
 
 # @session_timeout
 # @check_token_in_session
+@csrf_exempt
 def get_all_users(request):
     
     if request.method == "GET":
@@ -311,59 +316,244 @@ def get_all_users(request):
 def create_user(request):
     """User registration function for the creation of new users by admin"""
     if request.method == 'POST':
-        user_type_id = request.POST.get('user_type')
-        first_name = request.POST.get('first_name')
-        last_name = request.POST.get('last_name')
-        email = request.POST.get('user_email')
-        user_created_by_id = request.session.get('user_id')
-        password = generate_password()
+        try:
+            # Get the token from the request headers
+            token = request.headers.get("Authorization", "").split("Token ")[-1]
 
-        url = f"{host_url(request)}{reverse('create_user_api')}"
+            
+            # Validate if token exists
+            if not token:
+                return JsonResponse({'message': 'Token is missing or invalid'}, status=400)
+
+            # Use the token to fetch the logged-in user from the database
+            user = User.objects.filter(auth_token=token).first()  # Assuming auth_token is used for token validation
+            
+            if not user:
+                return JsonResponse({'message': 'Invalid token or user not found'}, status=400)
+
+            # Extract user details from the JSON body
+            data = json.loads(request.body)
+            user_type_id = data.get('user_type')  # Getting from JSON payload
+            first_name = data.get('first_name')
+            last_name = data.get('last_name')
+            email = data.get('user_email')
+            user_created_by_id = user.id  # Using logged-in user as the creator
+            password = generate_password()
+
+            url = f"{host_url(request)}{reverse_lazy('create_user_api')}"
+
+            payload = json.dumps({
+                "user_type_id": user_type_id,
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "user_created_by_id": user_created_by_id,
+                "password": password,
+            })
+
+            headers = {
+                'Authorization': f'Token {token}',
+                'Content-Type': constants.JSON_APPLICATION
+            }
+
+            # Call the API to create the new user
+            response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+            status = response_data.get('status')
+
+            if status == 'success':
+                # Determine the email template based on user type
+                if user_type_id == '1':
+                    html_tpl_path = "email_temps/admin_credentials.html"
+                elif user_type_id == '3':
+                    html_tpl_path = "email_temps/cao_credentials.html"
+                elif user_type_id == '2':
+                    html_tpl_path = "email_temps/attorney_credentials.html"
+                else:
+                    html_tpl_path = "email_temps/user_credentials.html"
+                
+                subject = "New User Registration"
+                login_url = f"{host_url(request)}{reverse_lazy('login_view')}"
+                receiver_email = email
+
+                context_data = {
+                    "login_url": login_url,
+                    "first_name": first_name,
+                    "last_name": last_name,
+                    "email": email,
+                    "password": password
+                }
+
+                # Send the email notification
+                # url = f"{host_url(request)}{reverse_lazy('send_email_api')}"
+                url = f"{host_url(request)}{reverse('send_email_api')}"
+
+                payload = json.dumps({
+                    "html_tpl_path": html_tpl_path,
+                    "receiver_email": receiver_email,
+                    "context_data": context_data,
+                    "subject": subject,
+                })
+
+                thread = threading.Thread(target=_send_email_thread, args=(url, headers, payload))
+                thread.start()
+
+            return JsonResponse(data=response_data, safe=False)
+
+        except json.JSONDecodeError:
+            return JsonResponse({'message': 'Invalid JSON data'}, status=400)
+        except Exception as e:
+            return JsonResponse({'message': str(e)}, status=400)
+
+
+@session_timeout
+def get_roles(request):
+    """
+    View function to get all roles/user types.
+    Handles both session and header-based token authentication.
+    """
+    if request.method != "GET":
+        return JsonResponse({
+            'status': 'error',
+            'message': 'Only GET requests are allowed'
+        }, status=405)
+
+    try:
+        # Get token from session or Authorization header
+        token = request.session.get("token")
+        header_token = request.headers.get("Authorization", "").split("Token ")[-1]
+
+        # Update session token if provided in header
+        if header_token:
+            token = header_token
+            request.session["token"] = token
+            request.session.modified = True
+
+        if not token:
+            return JsonResponse({
+                "status": "error",
+                "message": "Token not found in session or headers"
+            }, status=401)
+
+        url = f"{host_url(request)}{reverse('get_user_types_api')}"
+
+        payload = json.dumps({
+            'token': token
+        })
+
+        headers = {
+            'Authorization': f'Token {token}',
+            'Content-Type': constants.JSON_APPLICATION
+        }
+
+        response_data = api_connection(
+            method="GET",
+            url=url,
+            headers=headers,
+            data=payload
+        )
+
+        if response_data.get('status') == 'success':
+            return JsonResponse({
+                'status': 'success',
+                'roles': response_data.get('user_types', [])
+            })
+        
+        return JsonResponse({
+            'status': 'error',
+            'message': response_data.get('message', 'Failed to fetch roles')
+        }, status=400)
+
+    except Exception as e:
+        return JsonResponse({
+            'status': 'error',
+            'message': str(e)
+        }, status=500)
+
+
+
+@check_token_in_session
+@session_timeout
+@ensure_csrf_cookie
+def update_user(request):
+   
+    try:
+        data = json.loads(request.body)
+        # Extract data from the request
+        user_id = data.get('user_id')
+        print('user_id',user_id)
+        user_type_id = data.get('user_type_id')
+        print('user_type_id',user_type_id)
+        first_name = data.get('first_name')
+        print('first_name',first_name)
+        last_name = data.get('last_name')
+        print('last_name',last_name)
+        email = data.get('email')
+        print('email',email)
+        # password = generate_password()
+
+        # Fetch the user
+        try:
+            user = User.objects.get(id=user_id)
+            original_email = user.email
+        except User.DoesNotExist:
+            return JsonResponse({
+                "status": "error",
+                "message": "User not found."
+            }, status=404)
+
+        # url = f"{host_url(request)}{reverse('update_user_api')}"
+        # url = f"{host_url(request)}{reverse('update_user_api')}"
+        url = f"{host_url(request)}{reverse_lazy('update_user_api')}"
+
+        # hashed_password = make_password(password)
         payload = json.dumps({
             "user_type_id": user_type_id,
+            "user_id": user_id,
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
-            "password": password,
+            # "password": hashed_password,
         })
+
 
         headers = {
             'Authorization': f'Token {request.session.get("token")}',
             'Content-Type': constants.JSON_APPLICATION
         }
+
         response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
-        status = response_data.get('status')
 
-        if status == 'success':
-            # Determine the email template based on user type
-            if user_type_id == '1':
-                html_tpl_path = "email_temps/admin_credentials.html"
-            elif user_type_id == '3':
-                html_tpl_path = "email_temps/cao_credentials.html"
-            elif user_type_id == '2':
-                html_tpl_path = "email_temps/attorney_credentials.html"
-            else:
-                html_tpl_path = "email_temps/user_credentials.html"
-            subject = "New User Registration"
-            login_url = f"{host_url(request)}{reverse('login_view')}"
-            receiver_email = email
-            context_data = {
-                "login_url": login_url,
-                "first_name": first_name,
-                "last_name": last_name,
-                "email": email,
-                "password": password
-            }
-
-            url = f"{host_url(request)}{reverse('send_email_api')}"
-            payload = json.dumps({
-                "html_tpl_path": html_tpl_path,
-                "receiver_email": receiver_email,
-                "context_data": context_data,
-                "subject": subject,
+        # Check response and return appropriate message
+        if response_data.get('status') == 'success':
+            print('success')
+            return JsonResponse({
+                "status": "success",
+                "message": "User updated successfully"
             })
+        
+        else:
+            print('failed')
+            return JsonResponse({
+                "status": "error",
+                "message": response_data.get('message', 'Update failed')
+            }, status=400)
 
-            thread = threading.Thread(target=_send_email_thread, args=(url, headers, payload))
-            thread.start()
+    except json.JSONDecodeError:
+        print('excepjson error')
+        return JsonResponse({
+            "status": "error",
+            "message": "Invalid JSON data"
+        }, status=400)
+    except Exception as e:
+        print('exception')
+        print(f"Error updating user: {str(e)}")
+        print('exception')
+        return JsonResponse({
+            "status": "error",
+            "message": "Server error occurred"
+        }, status=500)
 
-        return JsonResponse(data=response_data, safe=False)
+
+@ensure_csrf_cookie
+def csrf(request):
+    return JsonResponse({'csrfToken': get_token(request)})

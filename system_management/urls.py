@@ -13,6 +13,9 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('get_all_users/', views.get_all_users, name='get_all_users'),
     path('create_user/', views.create_user, name='create_user'),
+    path('get_roles/', views.get_roles, name='get_roles'),
+    path('update_user/', views.update_user, name='update_user'),
+    path('srf/', views.csrf, name='csrf'),
 
     re_path(r'^.*$', views.serve_react),  # Catch-all route for React
 

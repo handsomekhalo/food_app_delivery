@@ -2,89 +2,57 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import SideBar from "./SideBar";
+import { useAuth } from "../../../AuthContext";
 
 const AddAdmin = () => {
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [role, setRole] = useState("");
+  const { authToken, csrfToken } = useAuth();
+  const [formData, setFormData] = useState({
+    first_name: "",
+    last_name: "",
+    user_email: "",
+    user_type: ""
+  });
   const [roles, setRoles] = useState([]);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
   const navigate = useNavigate();
 
-  // Function to get token from session storage or cookie
-  const getAuthToken = () => {
-    const token = localStorage.getItem("authToken") || localStorage.getItem("authToken");
-    console.log("Current token:", token); // Debug log
-    return token;
+  // Function to fetch roles
+  const fetchRoles = async () => {
+    if (!authToken) {
+      setMessage("Authentication required. Please login again.");
+      setMessageType("danger");
+      return;
+    }
+
+    try {
+      const response = await axios.get(
+        "http://localhost:8000/system_management/get_roles/",
+        {
+          headers: {
+            Authorization: `Token ${authToken}`,
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+          withCredentials: true,
+        }
+      );
+
+      if (response.data.status === "success") {
+        setRoles(response.data.roles || []);
+      } else {
+        setMessage(response.data.message || "Failed to fetch roles");
+        setMessageType("warning");
+      }
+    } catch (error) {
+      setMessage(`Error: ${error.response?.data?.message || error.message}`);
+      setMessageType("danger");
+    }
   };
 
-  useEffect(() => {
-    const fetchRoles = async () => {
-      const token = getAuthToken();
-      
-      if (!token) {
-        console.error("No token found");
-        setMessage("Authentication required. Please login again.");
-        setMessageType("danger");
-        // Optionally redirect to login
-        // navigate('/login');
-        return;
-      }
-
-      try {
-        console.log("Making request with token:", token); // Debug log
-        ///system_management/get_all_users/
-        const response = await axios.get("http://localhost:8000/system_management/get_all_users/", {
-      
-          headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json",
-            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]')?.value
-          },
-          withCredentials: true // Important for sending cookies
-        });
-
-        console.log("Full API Response:", response); // Debug log
-
-        if (response.data.status === 'success') {
-          if (response.data.user_types) {
-            console.log("Received roles:", response.data.user_types);
-            setRoles(response.data.user_types);
-          } else {
-            console.warn("No user_types in response");
-            setMessage("No roles available");
-            setMessageType("warning");
-          }
-        } else {
-          setMessage(response.data.message || "Failed to fetch roles");
-          setMessageType("warning");
-        }
-      } catch (error) {
-        console.error("Error details:", {
-          message: error.message,
-          response: error.response,
-          request: error.request
-        });
-        
-        if (error.response?.status === 401) {
-          setMessage("Session expired. Please login again.");
-          // navigate('/login');
-        } else {
-          setMessage(`Error: ${error.response?.data?.message || error.message}`);
-        }
-        setMessageType("danger");
-      }
-    };
-
-    fetchRoles();
-  }, [navigate]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    const token = getAuthToken();
-
-    if (!token) {
+  // Function to create a new user
+  const createUser = async () => {
+    if (!authToken) {
       setMessage("Authentication required. Please login again.");
       setMessageType("danger");
       return;
@@ -92,43 +60,56 @@ const AddAdmin = () => {
 
     try {
       const response = await axios.post(
-        //system_management/get_all_users
-        "http://localhost:8000/system_management/get_all_users/",
-        {
-          full_name: fullName,
-          email,
-          role,
-        },
+        "http://localhost:8000/system_management/create_user/",
+        JSON.stringify(formData),  // Explicitly sending as JSON
         {
           headers: {
-            "Authorization": `Token ${token}`,
-            "Content-Type": "application/json",
-            "X-CSRFToken": document.querySelector('[name=csrfmiddlewaretoken]')?.value
+            Authorization: `Token ${authToken}`,
+            "Content-Type": "application/json",  // Ensure JSON content type
+            "X-CSRFToken": csrfToken,
           },
-          withCredentials: true
+          withCredentials: true,
         }
       );
 
-      if (response.data.status === 'success') {
-        setMessage("Admin added successfully!");
+      if (response.data.status === "success") {
+        setMessage("User added successfully!");
         setMessageType("success");
-        setTimeout(() => navigate("/admin/manage-admins"), 2000);
+        setTimeout(() => navigate("/admin/manage-users"), 2000);
       } else {
-        setMessage(response.data.message || "Failed to add admin");
+        setMessage(response.data.message || "Failed to add user");
         setMessageType("warning");
       }
     } catch (error) {
-      console.error("Submit error:", error);
-      setMessage(error.response?.data?.message || "Error adding admin");
+      setMessage(error.response?.data?.message || "Error adding user");
       setMessageType("danger");
     }
+  };
+
+  // Fetch roles on component mount
+  useEffect(() => {
+    fetchRoles();
+  }, []);
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    createUser();
+  };
+
+  // Handle input changes
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
   };
 
   return (
     <div className="d-flex">
       <SideBar />
       <div className="content-area p-4">
-        <h2 className="mb-4">Add Admin</h2>
+        <h2 className="mb-4">Add User</h2>
 
         {message && (
           <div className={`alert alert-${messageType}`} role="alert">
@@ -138,41 +119,57 @@ const AddAdmin = () => {
 
         <form onSubmit={handleSubmit} className="max-w-lg">
           <div className="mb-3">
-            <label htmlFor="fullName" className="form-label">Full Name</label>
+            <label htmlFor="first_name" className="form-label">First Name</label>
             <input
               type="text"
               className="form-control"
-              id="fullName"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+              id="first_name"
+              name="first_name"
+              value={formData.first_name}
+              onChange={handleChange}
               required
             />
           </div>
 
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">Email</label>
+            <label htmlFor="last_name" className="form-label">Last Name</label>
+            <input
+              type="text"
+              className="form-control"
+              id="last_name"
+              name="last_name"
+              value={formData.last_name}
+              onChange={handleChange}
+              required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label htmlFor="user_email" className="form-label">Email</label>
             <input
               type="email"
               className="form-control"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              id="user_email"
+              name="user_email"
+              value={formData.user_email}
+              onChange={handleChange}
               required
             />
           </div>
 
           <div className="mb-3">
-            <label htmlFor="role" className="form-label">Role</label>
+            <label htmlFor="user_type" className="form-label">User Type</label>
             <select
               className="form-select"
-              id="role"
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+              id="user_type"
+              name="user_type"
+              value={formData.user_type}
+              onChange={handleChange}
               required
             >
-              <option value="">Select Role</option>
-              {Array.isArray(roles) && roles.map((role) => (
-                <option key={role.id || role.name} value={role.name}>
+              <option value="">Select User Type</option>
+              {roles.map((role) => (
+                <option key={role.id} value={role.id}>
                   {role.name}
                 </option>
               ))}
@@ -180,7 +177,7 @@ const AddAdmin = () => {
           </div>
 
           <button type="submit" className="btn btn-primary">
-            Add Admin
+            Add User
           </button>
         </form>
       </div>

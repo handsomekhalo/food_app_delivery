@@ -2,71 +2,52 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext(null);
 
-
 export const useAuth = () => {
-  return useContext(AuthContext); // Return context values when using the hook
+  return useContext(AuthContext); // Access AuthContext
 };
 
 export const AuthProvider = ({ children }) => {
   const [authToken, setAuthToken] = useState(() => {
     const token = localStorage.getItem('authToken');
-    console.log('[AuthProvider] Initial token from localStorage:', token); // Debug log
-    return token || null; // Ensure null if no token exists
+    return token || null; // Retrieve auth token from localStorage
+  });
+
+  const [csrfToken, setCSRFToken] = useState(() => {
+    const token = localStorage.getItem('csrfToken');
+    return token || null; // Retrieve CSRF token from localStorage
   });
 
   useEffect(() => {
     if (authToken) {
-      console.log('[AuthProvider] Storing token in localStorage:', authToken); // Debug log
-      localStorage.setItem('authToken', authToken);
+      localStorage.setItem('authToken', authToken); // Store auth token
     } else {
-      console.log('[AuthProvider] Removing token from localStorage'); // Debug log
-      localStorage.removeItem('authToken');
+      localStorage.removeItem('authToken'); // Clear auth token
     }
   }, [authToken]);
 
-  const login = (token) => {
-    console.log('[AuthProvider] Logging in with token:', token); // Debug log
-    setAuthToken(token); // Update the state with the new token
+  useEffect(() => {
+    if (csrfToken) {
+      localStorage.setItem('csrfToken', csrfToken); // Store CSRF token
+    } else {
+      localStorage.removeItem('csrfToken'); // Clear CSRF token
+    }
+  }, [csrfToken]);
+
+  const login = (token, csrf) => {
+    setAuthToken(token); // Store auth token
+    setCSRFToken(csrf); // Store CSRF token
   };
 
   const logout = () => {
-    console.log('[AuthProvider] Logging out'); // Debug log
-    setAuthToken(null); // Clear the state and remove the token
+    setAuthToken(null); // Clear auth token
+    setCSRFToken(null); // Clear CSRF token
   };
 
   const isAuthenticated = Boolean(authToken);
 
   return (
-    <AuthContext.Provider value={{ authToken, isAuthenticated, login, logout }}>
+    <AuthContext.Provider value={{ authToken, csrfToken, isAuthenticated, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
