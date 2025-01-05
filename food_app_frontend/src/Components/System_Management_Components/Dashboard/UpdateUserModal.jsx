@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useAuth } from "../../../AuthContext";
 
-const UpdateUserModal = ({ show, onClose, user, roles, onUpdate }) => {
+const UpdateUserModal = React.memo(({ show, onClose, user, roles, onUpdate }) => {
+  console.log('hahaha')
+
   const { authToken, csrfToken } = useAuth();
   const [formData, setFormData] = useState({
     first_name: "",
@@ -14,7 +16,6 @@ const UpdateUserModal = ({ show, onClose, user, roles, onUpdate }) => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Update form data when user prop changes
   useEffect(() => {
     if (user) {
       setFormData({
@@ -37,54 +38,46 @@ const UpdateUserModal = ({ show, onClose, user, roles, onUpdate }) => {
 
   const handleSaveChanges = async (e) => {
     e.preventDefault();
-    setError('');
+    e.stopPropagation();
+
+    if (isSubmitting) return; // Prevent multiple submissions
+
+    setError("");
     setIsSubmitting(true);
-  
+
     if (!csrfToken) {
       setError("CSRF token not found. Please refresh the page.");
+      setIsSubmitting(false);
       return;
     }
-  
+
     try {
       const requestData = {
-        first_name: formData.first_name, // Corrected
-        last_name: formData.last_name,   // Corrected
+        first_name: formData.first_name,
+        last_name: formData.last_name,
         email: formData.email,
         user_type_id: parseInt(formData.userType),
-        user_id: parseInt(formData.userId),
-        password: user.password || "" // Optional
+        user_id: parseInt(formData.userId)
       };
-      
-      // const requestData = {
-      //   first_name: formData.firstName,
-      //   last_name: formData.lastName,
-      //   email: formData.email,
-      //   user_type_id: parseInt(formData.userType),
-      //   user_id: parseInt(formData.userId),
-      //   password: user.password || "" // Include the existing password if available
-      // };
-  
-      const response = await axios.post(
-        'http://localhost:8000/system_management/update_user/',
-        // requestData,
-        JSON.stringify(requestData),
-        {
-          headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/json',
-            Authorization: `Token ${authToken}`,
-          },
-          withCredentials: true,
-        }
-      );
 
-      console.log('response is',response)
-  
-      const responseData = typeof response.data === 'string' 
-        ? JSON.parse(response.data) 
-        : response.data;
-  
-      if (responseData.status === 'success') {
+      const axiosInstance = axios.create();
+      const response = await axiosInstance({
+        method: "post", // Explicitly set method to lowercase 'post'
+        url: `http://localhost:8000/system_management/update_user/${formData.userId}/`,
+        data: requestData,
+        headers: {
+          "X-CSRFToken": csrfToken,
+          "Content-Type": "application/json",
+          Authorization: `Token ${authToken}`
+        },
+        withCredentials: true,
+        validateStatus: (status) => status < 500 // Accept all status codes less than 500
+      });
+
+      const responseData =
+        typeof response.data === "string" ? JSON.parse(response.data) : response.data;
+
+      if (responseData.status === "success") {
         const updatedUser = {
           ...user,
           first_name: formData.first_name,
@@ -92,17 +85,25 @@ const UpdateUserModal = ({ show, onClose, user, roles, onUpdate }) => {
           email: formData.email,
           user_type_id: parseInt(formData.userType)
         };
-        onUpdate(updatedUser);
-        onClose();
+        setTimeout(() => {
+          onUpdate(updatedUser);
+          onClose();
+        }, 0);
       } else {
-        setError(responseData.message || 'Update failed');
+        setError(responseData.message || "Update failed");
       }
     } catch (err) {
-      console.error('Update error:', err);
-      setError(err.response?.data?.message || 'An error occurred while updating user');
+      console.error("Update error:", err);
+      setError(err.response?.data?.message || "An error occurred while updating user");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleModalClose = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onClose();
   };
 
   if (!show) return null;
@@ -112,12 +113,13 @@ const UpdateUserModal = ({ show, onClose, user, roles, onUpdate }) => {
       className="modal fade show"
       role="dialog"
       style={{ background: "rgba(0,0,0,0.5)", display: "block" }}
+      onClick={(e) => e.stopPropagation()}
     >
       <div className="modal-dialog modal-dialog-centered">
         <div className="modal-content">
           <div className="modal-header">
-            <h5 className="modal-title">Update User</h5>
-            <button type="button" className="btn-close" onClick={onClose}></button>
+            <h5 className="modal-title">Updates User</h5>
+            <button type="button" className="btn-close" onClick={handleModalClose}></button>
           </div>
           <form onSubmit={handleSaveChanges}>
             <div className="modal-body">
@@ -190,6 +192,6 @@ const UpdateUserModal = ({ show, onClose, user, roles, onUpdate }) => {
       </div>
     </div>
   );
-};
+});
 
 export default UpdateUserModal;

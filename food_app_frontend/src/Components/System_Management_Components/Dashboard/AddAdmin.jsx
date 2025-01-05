@@ -37,6 +37,7 @@ const AddAdmin = () => {
           withCredentials: true,
         }
       );
+      
 
       if (response.data.status === "success") {
         setRoles(response.data.roles || []);
@@ -71,16 +72,18 @@ const AddAdmin = () => {
           withCredentials: true,
         }
       );
+      console.log('response',response)
 
       if (response.data.status === "success") {
         setMessage("User added successfully!");
         setMessageType("success");
-        setTimeout(() => navigate("/admin/manage-users"), 2000);
+        setTimeout(() => navigate("/user_management"), 2000);
       } else {
         setMessage(response.data.message || "Failed to add user");
         setMessageType("warning");
       }
     } catch (error) {
+      // console.log('response',response)
       setMessage(error.response?.data?.message || "Error adding user");
       setMessageType("danger");
     }

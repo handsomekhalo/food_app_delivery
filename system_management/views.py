@@ -311,8 +311,9 @@ def get_all_users(request):
     })
 
 
-@session_timeout
-@check_token_in_session
+# @session_timeout
+# @check_token_in_session
+@ensure_csrf_cookie     
 def create_user(request):
     """User registration function for the creation of new users by admin"""
     if request.method == 'POST':
@@ -471,89 +472,270 @@ def get_roles(request):
 
 
 
-@check_token_in_session
-@session_timeout
-@ensure_csrf_cookie
-def update_user(request):
+# @check_token_in_session
+# @session_timeout
+# @ensure_csrf_cookie
+# def update_user(request):
    
+#     try:
+#         data = json.loads(request.body)
+#         # Extract data from the request
+#         user_id = data.get('user_id')
+#         print('user_id',user_id)
+#         user_type_id = data.get('user_type_id')
+#         print('user_type_id',user_type_id)
+#         first_name = data.get('first_name')
+#         print('first_name',first_name)
+#         last_name = data.get('last_name')
+#         print('last_name',last_name)
+#         email = data.get('email')
+#         print('email',email)
+#         # password = generate_password()
+
+#         # Fetch the user
+#         try:
+#             user = User.objects.get(id=user_id)
+#             original_email = user.email
+#         except User.DoesNotExist:
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": "User not found."
+#             }, status=404)
+
+#         # url = f"{host_url(request)}{reverse('update_user_api')}"
+#         # url = f"{host_url(request)}{reverse('update_user_api')}"
+#         url = f"{host_url(request)}{reverse_lazy('update_user_api')}"
+
+#         # hashed_password = make_password(password)
+#         payload = json.dumps({
+#             "user_type_id": user_type_id,
+#             "user_id": user_id,
+#             "first_name": first_name,
+#             "last_name": last_name,
+#             "email": email,
+#             # "password": hashed_password,
+#         })
+
+
+#         headers = {
+#             'Authorization': f'Token {request.session.get("token")}',
+#             'Content-Type': constants.JSON_APPLICATION
+#         }
+
+#         response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+
+#         # Check response and return appropriate message
+#         if response_data.get('status') == 'success':
+#             print('success')
+#             return JsonResponse({
+#                 "status": "success",
+#                 "message": "User updated successfully"
+#             })
+        
+#         else:
+#             print('failed')
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": response_data.get('message', 'Update failed')
+#             }, status=400)
+
+#     except json.JSONDecodeError:
+#         print('excepjson error')
+#         return JsonResponse({
+#             "status": "error",
+#             "message": "Invalid JSON data"
+#         }, status=400)
+#     except Exception as e:
+#         print('exception')
+#         print(f"Error updating user: {str(e)}")
+#         print('exception')
+#         return JsonResponse({
+#             "status": "error",
+#             "message": "Server error occurred"
+#         }, status=500)
+
+
+# @check_token_in_session
+# @session_timeout
+# @ensure_csrf_cookie
+# def update_user(request, user_id):
+#     if request.method != 'POST':
+#         return JsonResponse({
+#             "status": "error",
+#             "message": "Method not allowed"
+#         }, status=405)
+    
+
+#     if request.method not in ['POST']:
+#         return JsonResponse({
+#             "status": "error",
+#             "message": "Method not allowed"
+#         }, status=405)
+        
+#     try:
+#         data = json.loads(request.body)
+#         user_type_id = data.get('user_type_id')
+#         first_name = data.get('first_name')
+#         last_name = data.get('last_name')
+#         email = data.get('email')
+
+#         # Validate required fields
+#         if not all([user_type_id, first_name, last_name, email]):
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": "All fields are required."
+#             }, status=400)
+
+        
+#         # Fetch the user
+#         try:
+#             user = User.objects.get(id=user_id)
+#         except User.DoesNotExist:
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": "User not found."
+#             }, status=404)
+
+#         # Prepare API call
+#         url = f"{host_url(request)}{reverse_lazy('update_user_api')}"
+        
+#         payload = json.dumps({
+#             "user_type_id": user_type_id,
+#             "user_id": user_id,
+#             "first_name": first_name,
+#             "last_name": last_name,
+#             "email": email,
+#         })
+
+#         headers = {
+#             'Authorization': f'Token {request.session.get("token")}',
+#             'Content-Type': constants.JSON_APPLICATION
+#         }
+
+#         # Make API call
+#         response_data = api_connection(method="POST",url=url,headers=headers,data=payload)
+
+#         if response_data.get('status') == 'success':
+#             print('sucesful')
+#             return JsonResponse({
+#                 "status": "success",
+#                 "message": "User updated successfully"
+#             })
+#         else:
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": response_data.get('message', 'Update failed')
+#             }, status=400)
+
+#     except json.JSONDecodeError:
+#         return JsonResponse({
+#             "status": "error",
+#             "message": "Invalid JSON data"
+#         }, status=400)
+#     except Exception as e:
+#         return JsonResponse({
+#             "status": "error",
+#             "message": f"Server error occurred: {str(e)}"
+#         }, status=500)
+
+import logging
+
+# Configure logging if not already done in your project
+logging.basicConfig(level=logging.INFO)
+
+# @check_token_in_session
+# @session_timeout
+@csrf_exempt
+def update_user(request, user_id):
+    if request.method != 'POST':
+        return JsonResponse({
+            "status": "error",
+            "message": "Method not allowed"
+        }, status=405)
+
     try:
+        # Log request metadata
+        logging.info(f"Headers: {dict(request.headers)}")
+        logging.info(f"Body: {request.body.decode('utf-8')}")
+        logging.info(f"User ID: {user_id}")
+        logging.info(f"Session Token: {request.session.get('token')}")
+
+        # Parse and validate request data
         data = json.loads(request.body)
-        # Extract data from the request
-        user_id = data.get('user_id')
-        print('user_id',user_id)
         user_type_id = data.get('user_type_id')
-        print('user_type_id',user_type_id)
         first_name = data.get('first_name')
-        print('first_name',first_name)
         last_name = data.get('last_name')
-        print('last_name',last_name)
         email = data.get('email')
-        print('email',email)
-        # password = generate_password()
+        csrf_token_from_cookie = request.COOKIES.get('csrftoken')
+        logging.info(f"CSRF Token from Cookie: {csrf_token_from_cookie}")
+        logging.info(f"CSRF Token from Header: {request.headers.get('X-CSRFToken')}")
+
+        if not all([user_type_id, first_name, last_name, email]):
+            return JsonResponse({
+                "status": "error",
+                "message": "All fields are required."
+            }, status=400)
 
         # Fetch the user
         try:
             user = User.objects.get(id=user_id)
-            original_email = user.email
         except User.DoesNotExist:
             return JsonResponse({
                 "status": "error",
                 "message": "User not found."
             }, status=404)
 
-        # url = f"{host_url(request)}{reverse('update_user_api')}"
-        # url = f"{host_url(request)}{reverse('update_user_api')}"
+        # Prepare API call
         url = f"{host_url(request)}{reverse_lazy('update_user_api')}"
-
-        # hashed_password = make_password(password)
         payload = json.dumps({
             "user_type_id": user_type_id,
             "user_id": user_id,
             "first_name": first_name,
             "last_name": last_name,
             "email": email,
-            # "password": hashed_password,
         })
-
 
         headers = {
             'Authorization': f'Token {request.session.get("token")}',
             'Content-Type': constants.JSON_APPLICATION
         }
 
+        # Log API call details
+        logging.info(f"API URL: {url}")
+        logging.info(f"Payload: {payload}")
+        logging.info(f"Headers for API call: {headers}")
+
+        # Make API call
         response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
 
-        # Check response and return appropriate message
         if response_data.get('status') == 'success':
-            print('success')
+            logging.info("User updated successfully.")
             return JsonResponse({
                 "status": "success",
                 "message": "User updated successfully"
             })
-        
         else:
-            print('failed')
+            # Return early if response is unsuccessful, no further processing required
+            logging.error("Update failed: " + response_data.get('message', 'Unknown error'))
             return JsonResponse({
                 "status": "error",
                 "message": response_data.get('message', 'Update failed')
             }, status=400)
 
     except json.JSONDecodeError:
-        print('excepjson error')
+        logging.error("Invalid JSON data in request.")
         return JsonResponse({
             "status": "error",
             "message": "Invalid JSON data"
         }, status=400)
     except Exception as e:
-        print('exception')
-        print(f"Error updating user: {str(e)}")
-        print('exception')
+        logging.exception("An unexpected error occurred.")
         return JsonResponse({
             "status": "error",
-            "message": "Server error occurred"
+            "message": f"Server error occurred: {str(e)}"
         }, status=500)
 
-
+    
 @ensure_csrf_cookie
 def csrf(request):
     return JsonResponse({'csrfToken': get_token(request)})
