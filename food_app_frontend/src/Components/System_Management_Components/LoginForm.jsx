@@ -190,24 +190,25 @@ const LoginForm = () => {
       [name]: type === 'checkbox' ? checked : value,
     }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setIsSubmitting(true);
-
+  
     try {
       // Extract CSRF token from cookies
       const csrfToken = document.cookie
         .split('; ')
         .find((row) => row.startsWith('csrftoken='))?.split('=')[1];
-
+  
+      console.log('CSRF Token:', csrfToken); // Print CSRF token to console
+  
       if (!csrfToken) {
         setError('CSRF token is missing.');
         setIsSubmitting(false);
         return;
       }
-
+  
       // Login API request
       const response = await axios.post(
         'http://localhost:8000/system_management/login/',
@@ -224,16 +225,16 @@ const LoginForm = () => {
           withCredentials: true, // Ensure cookies are sent
         }
       );
-
+  
       // Handle successful login
       if (response.data.status === 'success') {
         const parsedData = JSON.parse(response.data.data);
         const { token, first_login, user } = parsedData;
-
+  
         if (token) {
           authLogin(token, csrfToken); // Pass auth token and CSRF token to AuthContext
           localStorage.setItem('user', JSON.stringify(user)); // Optionally store user data
-
+  
           navigate('/dashboard'); // Redirect
         } else {
           setError('No token received from server.');
@@ -248,6 +249,65 @@ const LoginForm = () => {
       setIsSubmitting(false);
     }
   };
+  
+
+  // const handleSubmit = async (e) => {
+  //   e.preventDefault();
+  //   setError('');
+  //   setIsSubmitting(true);
+
+  //   try {
+  //     // Extract CSRF token from cookies
+  //     const csrfToken = document.cookie
+  //       .split('; ')
+  //       .find((row) => row.startsWith('csrftoken='))?.split('=')[1];
+
+  //     if (!csrfToken) {
+  //       setError('CSRF token is missing.');
+  //       setIsSubmitting(false);
+  //       return;
+  //     }
+
+  //     // Login API request
+  //     const response = await axios.post(
+  //       'http://localhost:8000/system_management/login/',
+  //       {
+  //         email: formData.username,
+  //         password: formData.password,
+  //         rememberMe: formData.rememberMe,
+  //       },
+  //       {
+  //         headers: {
+  //           'X-CSRFToken': csrfToken,
+  //           'Content-Type': 'application/json',
+  //         },
+  //         withCredentials: true, // Ensure cookies are sent
+  //       }
+  //     );
+
+  //     // Handle successful login
+  //     if (response.data.status === 'success') {
+  //       const parsedData = JSON.parse(response.data.data);
+  //       const { token, first_login, user } = parsedData;
+
+  //       if (token) {
+  //         authLogin(token, csrfToken); // Pass auth token and CSRF token to AuthContext
+  //         localStorage.setItem('user', JSON.stringify(user)); // Optionally store user data
+
+  //         navigate('/dashboard'); // Redirect
+  //       } else {
+  //         setError('No token received from server.');
+  //       }
+  //     } else {
+  //       setError(response.data.message || 'Login failed. Please try again.');
+  //     }
+  //   } catch (err) {
+  //     console.error('Login error:', err);
+  //     setError(err.response?.data?.message || 'An error occurred. Please try again.');
+  //   } finally {
+  //     setIsSubmitting(false);
+  //   }
+  // };
 
   return (
     <div className="login-container">

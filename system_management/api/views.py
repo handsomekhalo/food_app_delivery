@@ -543,22 +543,111 @@ def first_time_login_reset_api(request):
         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-@api_view(['POST'])
-def update_user_api(request):
-    """
-    Update function api for user edit
+# @api_view(['POST', 'PUT'])
+# def update_user_api(request):
+#     """
+#     Update function api for user edit
 
-    Args:
-        request:
-    Returns:
-        Response:
-            data:
-                - status
-                - message
-            status code:
-    """
+#     Args:
+#         request:
+#     Returns:
+#         Response:
+#             data:
+#                 - status
+#                 - message
+#             status code:
+#     """
+#     if request.method == 'POST':
+#         body = json.loads(request.body)
+
+#         print('body', body)
+#         serializer = UserUpdateSerializer(data=body)
+
+#         if serializer.is_valid():
+#             print('its valid')
+#             validated_data = serializer.validated_data
+#             user_id = validated_data.get('user_id')
+#             email = validated_data.get('email')
+        
+#             if User.objects.exclude(id=user_id).filter(email=email).exists():
+#                 data = json.dumps({
+#                     'status': "error",
+#                     'message': f"User with email {email} already exists."
+#                 })
+#                 return Response(data, status.HTTP_400_BAD_REQUEST)
+
+#             try:
+#                 user = User.objects.get(id=user_id)
+
+#                 print('user',user)
+
+#             except User.DoesNotExist:
+
+#                 data = json.dumps({
+#                     'status': "error",
+#                     'message': f"User with id {user_id} does not exist."
+#                 })
+#                 return Response(data, status.HTTP_400_BAD_REQUEST)
+
+#             user_type_id = validated_data.get('user_type_id')
+
+#             print('user_type_id',user_type_id)
+
+#             try:
+#                 user_type = UserType.objects.get(id=user_type_id)
+#                 print('user_type',user_type)
+
+#             except UserType.DoesNotExist:
+#                 data = json.dumps({
+#                     'status': "error",
+#                     'message': f"User type with id {user_type_id} does not exist."
+#                 })
+#                 return Response(data, status.HTTP_400_BAD_REQUEST)
+
+#             email_change = False
+
+#             if not user.email == validated_data.get('email'):
+#                 email_change = True
+
+#             user.first_name = validated_data.get('first_name')
+#             user.last_name = validated_data.get('last_name')
+#             user.email = validated_data.get('email')
+#             user.user_type_id = user_type.id
+#             user.save()
+
+#             # Profile.objects.filter(user_id=user_id).update(
+#             #     email=validated_data.get('phone_number')
+#             # )
+
+#             data = json.dumps({
+#                 'status': "success",
+#                 'message': "User updated successfully.",
+#                 'user_type': str(user_type.name).lower(),
+#                 "email_change": email_change
+#             })
+#             return Response(data, status=status.HTTP_200_OK)
+
+#         else:
+#             print('invalid')
+#             data = json.dumps({
+#                 'status': "error",
+#                 'message': str(serializer.errors)
+#             })
+#             return Response(data, status.HTTP_400_BAD_REQUEST)
+
+#     else:
+
+#         data = json.dumps({
+#             'status': "error",
+#             'message': constants.INVALID_REQUEST_METHOD
+#         })
+#         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
+@api_view(['POST', 'PUT'])
+def update_user_api(request):
+    print('executin')
     if request.method == 'POST':
-        body = json.loads(request.body)
+        # body = json.loads(request.body)
+        body = json.loads(request.body) if isinstance(request.body, bytes) else request.data
 
         print('body', body)
         serializer = UserUpdateSerializer(data=body)
@@ -568,80 +657,61 @@ def update_user_api(request):
             validated_data = serializer.validated_data
             user_id = validated_data.get('user_id')
             email = validated_data.get('email')
-        
+
+            # Check for duplicate email
             if User.objects.exclude(id=user_id).filter(email=email).exists():
-                data = json.dumps({
+                return Response({
                     'status': "error",
                     'message': f"User with email {email} already exists."
-                })
-                return Response(data, status.HTTP_400_BAD_REQUEST)
+                }, status=status.HTTP_400_BAD_REQUEST)
 
+            # Fetch the user
             try:
                 user = User.objects.get(id=user_id)
-
-                print('user',user)
-
             except User.DoesNotExist:
-
-                data = json.dumps({
+                return Response({
                     'status': "error",
                     'message': f"User with id {user_id} does not exist."
-                })
-                return Response(data, status.HTTP_400_BAD_REQUEST)
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             user_type_id = validated_data.get('user_type_id')
-
-            print('user_type_id',user_type_id)
-
             try:
                 user_type = UserType.objects.get(id=user_type_id)
-                print('user_type',user_type)
-
             except UserType.DoesNotExist:
-                data = json.dumps({
+                return Response({
                     'status': "error",
                     'message': f"User type with id {user_type_id} does not exist."
-                })
-                return Response(data, status.HTTP_400_BAD_REQUEST)
+                }, status=status.HTTP_400_BAD_REQUEST)
 
             email_change = False
-
             if not user.email == validated_data.get('email'):
                 email_change = True
 
+            # Update user data
             user.first_name = validated_data.get('first_name')
             user.last_name = validated_data.get('last_name')
             user.email = validated_data.get('email')
             user.user_type_id = user_type.id
             user.save()
 
-            # Profile.objects.filter(user_id=user_id).update(
-            #     email=validated_data.get('phone_number')
-            # )
-
-            data = json.dumps({
+            return Response(json.dumps({
                 'status': "success",
                 'message': "User updated successfully.",
                 'user_type': str(user_type.name).lower(),
                 "email_change": email_change
-            })
-            return Response(data, status=status.HTTP_200_OK)
+            }), status=status.HTTP_200_OK)
 
         else:
-            print('invalid')
-            data = json.dumps({
+            return Response(json.dumps({
                 'status': "error",
                 'message': str(serializer.errors)
-            })
-            return Response(data, status.HTTP_400_BAD_REQUEST)
+            }), status=status.HTTP_400_BAD_REQUEST)
 
     else:
-
-        data = json.dumps({
+        return Response({
             'status': "error",
             'message': constants.INVALID_REQUEST_METHOD
-        })
-        return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
+        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
 @api_view(['POST'])

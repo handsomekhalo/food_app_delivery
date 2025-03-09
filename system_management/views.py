@@ -16,6 +16,7 @@ from django.contrib.auth.hashers import make_password
 import requests
 from rest_framework.response import Response
 from django.middleware.csrf import get_token
+from system_management.api.views import update_user_api
 from system_management import constants
 from system_management.api.serializers import UserTypeModelSerializer
 from system_management.decorators import check_token_in_session, session_timeout
