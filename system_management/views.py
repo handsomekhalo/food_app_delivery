@@ -38,6 +38,21 @@ from system_management.general_func_classes import host_url, api_connection,_sen
 
 
 
+@ensure_csrf_cookie
+def csrf(request):
+    """
+    Sets the CSRF cookie and returns the token
+    """
+    token = get_token(request)
+    return JsonResponse({'csrfToken': token})
+
+# def csrf(request):
+#     print('executing')
+#     return JsonResponse({'csrfToken': get_token(request)})
+
+# def csrf(request):
+#     return JsonResponse({'csrfToken': get_token(request)})
+
 def get_data_on_success(response_data):
     status = response_data.get('status')
     if status == 'success':
@@ -81,6 +96,7 @@ def login_view(request):
 
 @ensure_csrf_cookie  # This ensures the CSRF cookie is set
 def login(request):
+    print('executing')
     """User login function with API."""
     if request.method != "POST":
         return JsonResponse({
@@ -737,6 +753,3 @@ def update_user(request, user_id):
         }, status=500)
 
     
-@ensure_csrf_cookie
-def csrf(request):
-    return JsonResponse({'csrfToken': get_token(request)})

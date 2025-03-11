@@ -11,3 +11,23 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+.welcome{
+  margin-left: 300px;
+  color: red;
+}
+
+.welcome-header{
+  margin-top: 20px;
+}
+
+.dashboard-btn {
+  cursor: pointer;
+  box-shadow: none !important;
+  font-size: 10px; 
+  color: red;
+}
+
+.dashboard-btn:hover, .dashboard-btn:active, .dashboard-btn:focus {
+outline: none; 
+}

@@ -109,7 +109,7 @@ const AddAdmin = () => {
   };
 
   return (
-    <div className="d-flex">
+    <div className="">
       <SideBar />
       <div className="content-area p-4">
         <h2 className="mb-4">Add User</h2>
@@ -179,7 +179,7 @@ const AddAdmin = () => {
             </select>
           </div>
 
-          <button type="submit" className="btn btn-primary">
+          <button type="submit" className="btn btn-primary dashboard-btn">
             Add User
           </button>
         </form>

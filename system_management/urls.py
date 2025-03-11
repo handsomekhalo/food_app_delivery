@@ -17,7 +17,7 @@ urlpatterns = [
     # path('update_user/', views.update_user, name='update_user'),
     path('update_user/<int:user_id>/', views.update_user, name='update_user'),
 
-    path('srf/', views.csrf, name='csrf'),
+    path('csrf/', views.csrf, name='csrf'),
 
     re_path(r'^.*$', views.serve_react),  # Catch-all route for React
 

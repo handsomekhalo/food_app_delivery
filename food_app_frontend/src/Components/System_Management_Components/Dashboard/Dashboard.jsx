@@ -22,7 +22,10 @@ export const Dashboard = () => {
   return (
     <div className="dashboard">
       <SideBar />
-      <h1>Welcome to the Dashboard</h1>
+      <div className="welcome">
+      <h1  lassName="welcome-header">Welcome to the Dashboard</h1>
+      </div>
+     
     </div>
   );
 };
