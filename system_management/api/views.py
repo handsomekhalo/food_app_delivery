@@ -517,9 +517,12 @@ def check_email_api(request):
 
 @api_view(['POST'])
 def delete_user_api(request):
+    print('inside API')
     body = json.loads(request.body) if isinstance(request.body, bytes) else request.data
     
+    print('body is', body)
     serializer = UserDeleteSerializer(data=body)
+    
     if serializer.is_valid():
         print('get here')
         validated_data = serializer.validated_data

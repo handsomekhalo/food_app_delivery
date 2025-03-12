@@ -567,3 +567,139 @@ def update_user(request, user_id):
         }, status=500)
 
     
+# @csrf_exempt
+# def delete_user(request, user_id):
+#     print('inside ')
+#     if request.method != 'POST':
+#         return JsonResponse({
+#             "status": "error",
+#             "message": "Method not allowed"
+#         }, status=405)
+
+#     try:
+#         # Check if the user exists
+#         try:
+#             user = User.objects.get(id=user_id)
+#             print('user',user)
+#         except User.DoesNotExist:
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": "User not found."
+#             }, status=404)
+
+#         # Prepare API call
+#         url = f"{host_url(request)}{reverse_lazy('delete_user_api')}"
+#         payload = json.dumps({"user_id": user_id})
+#         print('payload', payload)
+
+#         token = request.session.get("token")
+#         if not token:
+#             return JsonResponse({"status": "error", "message": "Authentication token missing"}, status=401)
+        
+#         print('token', token)
+#         # headers = {
+#         #     'Authorization': f'Token {request.session.get("token")}',
+#         #     'Content-Type': constants.JSON_APPLICATION
+#         # }
+#         headers = {
+#         'Authorization': f'Token {token}',
+#         'Content-Type': 'application/json',  # Ensure the correct content type
+#             }
+#         print('headers', headers)
+
+#         # Make API call
+#         print('sending payload')
+#         response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+#         print('response is ' , response_data)
+
+#         if response_data.get('status') == 'success':
+#             return JsonResponse({
+#                 "status": "success",
+#                 "message": "User deleted successfully"
+#             })
+#         else:
+#             return JsonResponse({
+#                 "status": "error",
+#                 "message": response_data.get('message', 'Deletion failed')
+#             }, status=400)
+
+#     except Exception as e:
+#         return JsonResponse({
+#             "status": "error",
+#             "message": f"Server error occurred: {str(e)}"
+#         }, status=500)
+@csrf_exempt
+def delete_user(request, user_id):
+    print("========== Incoming Request ==========")
+    print("Method:", request.method)
+    print("Headers:", dict(request.headers))  # Print all headers
+    print("Body:", request.body.decode('utf-8'))  # Print request body
+    print("Session Data:", dict(request.session))  # Print all session data
+    
+    if request.method != 'POST':
+        return JsonResponse({
+            "status": "error",
+            "message": "Method not allowed"
+        }, status=405)
+
+    try:
+        # Check if the user exists
+        try:
+            user = User.objects.get(id=user_id)
+            print("User Found:", user)
+        except User.DoesNotExist:
+            print("User not found")
+            return JsonResponse({
+                "status": "error",
+                "message": "User not found."
+            }, status=404)
+
+        # Debugging payload
+        payload = json.dumps({"user_id": user_id})
+        print("Payload to Send:", payload)
+        
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Token '):
+            print("❌ Authentication token missing in Authorization header")
+            return JsonResponse({"status": "error", "message": "Authentication token missing"}, status=401)
+        # Check token
+        token = auth_header.split(' ')[1] if auth_header else None
+        print("✅ Token from Authorization header:", token)
+        # token = request.session.get("token")
+        # if not token:
+        #     print("❌ Authentication token missing in session")
+        #     return JsonResponse({"status": "error", "message": "Authentication token missing"}, status=401)
+
+        print("✅ Token from session:", token)
+
+        headers = {
+            'Authorization': f'Token {token}',
+            'Content-Type': 'application/json',
+        }
+        print("Headers Being Sent:", headers)
+
+        # Prepare API call
+        url = f"{host_url(request)}{reverse_lazy('delete_user_api')}"
+        print("API URL:", url)
+
+        print("🚀 Sending API request now...")
+        response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+        print("📨 Response from API:", response_data)
+
+        if response_data.get('status') == 'success':
+            return JsonResponse({
+                "status": "success",
+                "message": "User deleted successfully"
+            })
+        else:
+            return JsonResponse({
+                "status": "error",
+                "message": response_data.get('message', 'Deletion failed')
+            }, status=400)
+
+    except Exception as e:
+        print("❌ Exception occurred:", str(e))
+        return JsonResponse({
+            "status": "error",
+            "message": f"Server error occurred: {str(e)}"
+        }, status=500)

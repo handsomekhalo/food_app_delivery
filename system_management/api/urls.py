@@ -14,7 +14,7 @@ urlpatterns = [
    path('first_time_login_reset_api/', views.first_time_login_reset_api, name="first_time_login_reset_api"),
    path('update_user_api/', views.update_user_api, name='update_user_api'),
    path('check_email_api/', views.check_email_api, name='check_email_api'),
-   # path('send_email_api/', views.send_email_api, name='send_email_api'),
+   path('send_email_api/', send_email_api, name='send_email_api'),
    path('delete_user_api/',views.delete_user_api, name='delete_user_api'),
 
 ]
