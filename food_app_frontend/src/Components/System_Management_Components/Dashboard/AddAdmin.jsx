@@ -4,8 +4,15 @@ import { useNavigate } from "react-router-dom";
 import SideBar from "./SideBar";
 import { useAuth } from "../../../AuthContext";
 
+
+const backendApi = axios.create({
+  baseURL: "http://127.0.0.1:8000",
+  withCredentials: true, // Ensures cookies are sent with requests
+});
+
 const AddAdmin = () => {
   const { authToken, csrfToken } = useAuth();
+  
   const [formData, setFormData] = useState({
     first_name: "",
     last_name: "",
@@ -17,7 +24,25 @@ const AddAdmin = () => {
   const [messageType, setMessageType] = useState("info");
   const navigate = useNavigate();
 
+
+    // Fetch CSRF Token on Component Mount
+    useEffect(() => {
+      console.log("Fetching CSRF token...");
+      backendApi
+        .get("/system_management/csrf/", { withCredentials: true })
+        .then((response) => {
+          if (response.data && response.data.csrfToken) {
+            csrfToken(response.data.csrfToken);
+            console.log("CSRF Token Set:", response.data.csrfToken);
+          }
+        })
+        .catch((error) => {
+          console.error("CSRF Token Fetch Error:", error);
+        });
+    }, []);
+
   // Function to fetch roles
+  
   const fetchRoles = async () => {
     if (!authToken) {
       setMessage("Authentication required. Please login again.");
@@ -26,6 +51,8 @@ const AddAdmin = () => {
     }
 
     try {
+
+      
       const response = await axios.get(
         "http://localhost:8000/system_management/get_roles/",
         {
@@ -60,9 +87,11 @@ const AddAdmin = () => {
     }
 
     try {
-      const response = await axios.post(
-        "http://localhost:8000/system_management/create_user/",
-        JSON.stringify(formData),  // Explicitly sending as JSON
+
+      const response = await backendApi.post(
+        "/system_management/create_user/",
+          JSON.stringify(formData),  // Explicitly sending as JSON
+
         {
           headers: {
             Authorization: `Token ${authToken}`,
@@ -71,7 +100,21 @@ const AddAdmin = () => {
           },
           withCredentials: true,
         }
+        
       );
+
+      // const response = await axios.post(
+      //   "http://localhost:8000/system_management/create_user/",
+      //   JSON.stringify(formData),  // Explicitly sending as JSON
+      //   {
+      //     headers: {
+      //       Authorization: `Token ${authToken}`,
+      //       "Content-Type": "application/json",  // Ensure JSON content type
+      //       "X-CSRFToken": csrfToken,
+      //     },
+      //     withCredentials: true,
+      //   }
+      // );
       console.log('response',response)
 
       if (response.data.status === "success") {

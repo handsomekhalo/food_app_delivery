@@ -14,3 +14,14 @@ class Restaurant(models.Model):
 
     def __str__(self):
         return self.name
+
+class MenuItem(models.Model):
+    """Menu items available in a restaurant."""
+    name = models.CharField(max_length=255)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+    restaurant = models.ForeignKey(
+        Restaurant, on_delete=models.CASCADE, related_name='menu_items'
+    )  # Each menu item is linked to a restaurant
+
+    def __str__(self):
+        return f"{self.name} - {self.restaurant.name}"

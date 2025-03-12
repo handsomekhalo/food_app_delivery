@@ -253,3 +253,6 @@ class SendEmailSerializer(BaseFormSerializer):
         }
     )
 
+
+class UserDeleteSerializer(serializers.Serializer):
+    user_id = serializers.IntegerField()

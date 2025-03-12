@@ -11,7 +11,6 @@ The following api is stored here:
 
 
 import json
-from venv import logger
 from django.forms import ValidationError
 from rest_framework.response import Response
 import random
@@ -35,6 +34,7 @@ from rest_framework.authtoken.models import Token
 from system_management.api.serializers import (
     CreateUserSerializer,
     ProfileSerializer,
+    UserDeleteSerializer,
     UserModelSerializer,
     UserResetPasswordSerializer,
     UserTypeModelSerializer,
@@ -233,173 +233,23 @@ def get_users_api(request):
         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-# @api_view(["POST"])
-# def create_user_api(request):
-
-#     bodys= json.loads(request.body)
-#     print('bodys', bodys)
-
-#     """
-#     Create user API
-    
-#     Args:
-#         request: HTTP request with user data
-#     Returns:
-#         Response:
-#             data:
-#                 - status
-#                 - message
-#             status code
-#     """
-#     try:
-#         if request.method != "POST":
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': "Method not allowed"
-#             })
-#             return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
-
-#         # Validate request body
-#         try:
-#             body = json.loads(request.body)
-#             print('body is', body)
-        
-
-#         except json.JSONDecodeError:
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': "Invalid JSON in request body"
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         # Validate serializer data
-#         serializer = CreateUserSerializer(data=body)
-#         if not serializer.is_valid():
-#             print('serializer is not valid')
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': "Validation error",
-#                 'errors': serializer.errors
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         print('proceed')
-#         # Extract validated data with null checks
-#         validated_data = serializer.validated_data
-        
-#         user_type_id = validated_data.get('user_type_id')
-#         if not user_type_id:
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': "user_type_id is required"
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         first_name = validated_data.get('first_name')
-#         last_name = validated_data.get('last_name')
-
-#         email = validated_data.get('email')
-#         if not email:
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': "email is required"
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         user_created_by_id = validated_data.get('user_created_by_id')
-#         password = validated_data.get('password')
-#         if not password:
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': "password is required"
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         # Check if email exists
-#         if User.objects.filter(email=email).exists():
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': f"User with email {email} already exists."
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         # Get user type with error handling
-#         try:
-#             user_type = UserType.objects.get(id=user_type_id)
-#         except ObjectDoesNotExist:
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': f"UserType with id {user_type_id} does not exist."
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#         # Create user with transaction
-#         with transaction.atomic():
-#             # Create user
-#             user = User.objects.create_user(
-#                 email=email,
-#                 first_name=first_name,
-#                 last_name=last_name,
-#                 user_type=user_type,
-#                 password=password,
-#                 user_created_by_id=user_created_by_id
-#             )
-
-#             # Create profile
-#             Profile.objects.create(
-#                 suburb=constants.EMPTY,
-#                 city=constants.EMPTY,
-#                 province=constants.EMPTY,
-#                 postal_code=constants.EMPTY,
-#                 user=user
-#             )
-
-#             data = json.dumps({
-#                 'status': "success",
-#                 'message': "User created successfully.",
-#                 'user_type': str(user_type.name).lower()
-#             })
-#             return Response(data, status.HTTP_201_CREATED)
-
-#     except ValidationError as e:
-#         data = json.dumps({
-#             'status': "error",
-#             'message': str(e)
-#         })
-#         return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#     except Exception as e:
-#         data = json.dumps({
-#             'status': "error",
-#             'message': f"An unexpected error occurred: {str(e)}"
-#         })
-#         return Response(data, status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-import logging
-
-logger = logging.getLogger(__name__)
 
 @api_view(["POST"])
 def create_user_api(request):
     try:
         body = json.loads(request.body)
-        logger.debug(f"Original body: {body}")
         
         # Manually handle conversion here for testing
         if isinstance(body.get('user_type_id'), str):
             body['user_type_id'] = int(body['user_type_id'])
         
-        logger.debug(f"Processed body: {body}")
-        
         # Validate serializer data
         serializer = CreateUserSerializer(data=body)
-
-        print('serializer is here', serializer)
         
         # Check if the serializer data is valid before accessing validated_data
         if not serializer.is_valid():
-            logger.error(f"Validation failed: {serializer.errors}")
             data = json.dumps({
                 "status": "error",
                 "message": "Validation failed",
@@ -428,7 +278,6 @@ def create_user_api(request):
         return Response(data, status.HTTP_201_CREATED, content_type='application/json')
 
     except json.JSONDecodeError:
-        logger.error("Invalid JSON data")
         data = json.dumps({
             "status": "error",
             "message": "Invalid JSON in request body"
@@ -436,7 +285,6 @@ def create_user_api(request):
         return Response(data, status.HTTP_400_BAD_REQUEST)
 
     except Exception as e:
-        logger.error(f"Unexpected error: {e}")
         data = json.dumps({
             "status": "error",
             "message": "An unexpected error occurred."
@@ -543,105 +391,7 @@ def first_time_login_reset_api(request):
         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
 
 
-# @api_view(['POST', 'PUT'])
-# def update_user_api(request):
-#     """
-#     Update function api for user edit
 
-#     Args:
-#         request:
-#     Returns:
-#         Response:
-#             data:
-#                 - status
-#                 - message
-#             status code:
-#     """
-#     if request.method == 'POST':
-#         body = json.loads(request.body)
-
-#         print('body', body)
-#         serializer = UserUpdateSerializer(data=body)
-
-#         if serializer.is_valid():
-#             print('its valid')
-#             validated_data = serializer.validated_data
-#             user_id = validated_data.get('user_id')
-#             email = validated_data.get('email')
-        
-#             if User.objects.exclude(id=user_id).filter(email=email).exists():
-#                 data = json.dumps({
-#                     'status': "error",
-#                     'message': f"User with email {email} already exists."
-#                 })
-#                 return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#             try:
-#                 user = User.objects.get(id=user_id)
-
-#                 print('user',user)
-
-#             except User.DoesNotExist:
-
-#                 data = json.dumps({
-#                     'status': "error",
-#                     'message': f"User with id {user_id} does not exist."
-#                 })
-#                 return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#             user_type_id = validated_data.get('user_type_id')
-
-#             print('user_type_id',user_type_id)
-
-#             try:
-#                 user_type = UserType.objects.get(id=user_type_id)
-#                 print('user_type',user_type)
-
-#             except UserType.DoesNotExist:
-#                 data = json.dumps({
-#                     'status': "error",
-#                     'message': f"User type with id {user_type_id} does not exist."
-#                 })
-#                 return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#             email_change = False
-
-#             if not user.email == validated_data.get('email'):
-#                 email_change = True
-
-#             user.first_name = validated_data.get('first_name')
-#             user.last_name = validated_data.get('last_name')
-#             user.email = validated_data.get('email')
-#             user.user_type_id = user_type.id
-#             user.save()
-
-#             # Profile.objects.filter(user_id=user_id).update(
-#             #     email=validated_data.get('phone_number')
-#             # )
-
-#             data = json.dumps({
-#                 'status': "success",
-#                 'message': "User updated successfully.",
-#                 'user_type': str(user_type.name).lower(),
-#                 "email_change": email_change
-#             })
-#             return Response(data, status=status.HTTP_200_OK)
-
-#         else:
-#             print('invalid')
-#             data = json.dumps({
-#                 'status': "error",
-#                 'message': str(serializer.errors)
-#             })
-#             return Response(data, status.HTTP_400_BAD_REQUEST)
-
-#     else:
-
-#         data = json.dumps({
-#             'status': "error",
-#             'message': constants.INVALID_REQUEST_METHOD
-#         })
-#         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
 @api_view(['POST', 'PUT'])
 def update_user_api(request):
     print('executin')
@@ -762,3 +512,36 @@ def check_email_api(request):
             'message': constants.INVALID_REQUEST_METHOD
         })
         return Response(data, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+@api_view(['POST'])
+def delete_user_api(request):
+    body = json.loads(request.body) if isinstance(request.body, bytes) else request.data
+    
+    serializer = UserDeleteSerializer(data=body)
+    if serializer.is_valid():
+        print('get here')
+        validated_data = serializer.validated_data
+        user_id = validated_data.get('user_id')
+        
+        try:
+            print('trying')
+            user = User.objects.get(id=user_id)
+            print('user is', user)
+            user.delete()
+            print('deleted')
+            return Response(json.dumps({
+                'status': "success",
+                'message': "User deleted successfully."
+            }), status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response(json.dumps({
+                'status': "error",
+                'message': f"User with id {user_id} does not exist."
+            }), status=status.HTTP_400_BAD_REQUEST)
+    
+    return Response(json.dumps({
+        'status': "error",
+        'message': str(serializer.errors)
+    }), status=status.HTTP_400_BAD_REQUEST)
