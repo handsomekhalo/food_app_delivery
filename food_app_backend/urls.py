@@ -23,6 +23,8 @@ urlpatterns = [
      path('', views.login_view, name='login_view'),
     path('system_management/', include('system_management.urls')),
     path('system_management_api/', include('system_management.api.urls')),
+    path('Restaurant_Management_api/', include('Restaurant_Management.api.urls')),
+    path('Restaurant_Management/', include('Restaurant_Management.urls')),
 
     #The re_path(r'^.*$', views.serve_react) ensures any unmatched URL is served by React's index.html. This is essential for React apps using BrowserRouter.
     re_path(r'^.*$', views.serve_react),  # Catch-all route for React
