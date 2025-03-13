@@ -28,12 +28,9 @@ const SideBar = () => {
         <li>
           {/* <a href="user_management">User Management</a> */}
           <Link to="/user_management">User Management</Link>
-
         </li>
         <li>
-          {/* <a href="user_management">User Management</a> */}
           <Link to="/restaurent_management" >Restaurent Management</Link>
-
         </li>
         {/* Add more menu items as needed */}
       </ul>

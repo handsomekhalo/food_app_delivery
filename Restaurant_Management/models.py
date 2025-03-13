@@ -8,7 +8,7 @@ class Restaurant(models.Model):
     manager = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        limit_choices_to={'user_type__name': 'Restaurant_Manager'},
+        limit_choices_to={'user_type__name': 'RESTAURANT_ADMIN'},
         related_name='managed_restaurant'
     )
 

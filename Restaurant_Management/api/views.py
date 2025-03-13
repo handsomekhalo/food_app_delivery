@@ -13,6 +13,7 @@ from rest_framework.decorators import (
     permission_classes
 )
 
+
 from rest_framework import (
     status,
     permissions,
@@ -29,7 +30,7 @@ from .serializers import RestaurantSerializer
 
 @api_view(['GET'])
 def get_all_restaurants_api(request):
-    print('inside API ')
+
     """
     Get all restaurants in the database
 
@@ -67,3 +68,38 @@ def get_all_restaurants_api(request):
             'message': "Invalid request method."
         })
         return Response(data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(['POST'])
+# @permission_classes([IsAuthenticated])
+def create_restaurant_api(request):
+    """
+    API endpoint to create a new restaurant.
+
+    Args:
+        request:
+    Returns:
+        Response:
+            data:
+                status:
+                message:
+                restaurant:
+            status code:
+    """
+    if request.method == 'POST':
+        serializer = RestaurantSerializer(data=request.data)
+
+        if serializer.is_valid():
+            serializer.save()
+            data = json.dumps({
+                'status': "success",
+                'message': "Restaurant created successfully",
+                'restaurant': serializer.data
+            })
+            return Response(data, status=status.HTTP_201_CREATED)
+
+        data = json.dumps({
+            'status': "error",
+            'message': serializer.errors
+        })
+        return Response(data, status=status.HTTP_400_BAD_REQUEST)

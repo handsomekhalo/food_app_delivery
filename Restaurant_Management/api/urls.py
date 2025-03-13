@@ -8,6 +8,7 @@ import Restaurant_Management.api.views as views
 urlpatterns = [
 
    path('get_all_restaurants_api/', views.get_all_restaurants_api, name="get_all_restaurants_api"),
+   path('create_restaurant_api/', views.create_restaurant_api, name="create_restaurant_api"),
 
 
 ]

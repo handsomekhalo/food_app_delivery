@@ -14,7 +14,6 @@ from system_management.general_func_classes import api_connection, host_url
 
 @csrf_exempt
 def get_all_restaurants(request):
-    print('inside logic')
     """
     Fetch all restaurants from the API layer and return them in JSON format.
     """
