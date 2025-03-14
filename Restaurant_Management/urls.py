@@ -10,6 +10,9 @@ urlpatterns = [
 
 
     path('get_all_restaurants/', views.get_all_restaurants, name='get_all_restaurants'),
+    path('get_all_restaurant_managers/', views.get_all_restaurant_managers, name='get_all_restaurant_managers'),
+    path('create_restaurant/', views.create_restaurant, name='create_restaurant'),
+    
 
 ] 
 

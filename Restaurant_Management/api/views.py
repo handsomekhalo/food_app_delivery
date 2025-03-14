@@ -28,7 +28,7 @@ import json
 
 from system_management.models import User, UserType
 
-from .serializers import  GetAllRestaurantManagerSerializer, RestaurantSerializer
+from .serializers import  CreateRestaurantSerializer, GetAllRestaurantManagerSerializer, RestaurantSerializer
 
 @api_view(['GET'])
 def get_all_restaurants_api(request):
@@ -112,6 +112,47 @@ def get_all_restaurants_managers_api(request):
         }), status=status.HTTP_400_BAD_REQUEST)
 
 
+# @api_view(['POST'])
+# # @permission_classes([IsAuthenticated])
+# def create_restaurant_api(request):
+#     """
+#     API endpoint to create a new restaurant.
+
+#     Args:
+#         request:
+#     Returns:
+#         Response:
+#             data:
+#                 status:
+#                 message:
+#                 restaurant:
+#             status code:
+#     """
+#     if request.method == 'POST':
+#         serializer = CreateRestaurantSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             serializer.save()
+#             data = json.dumps({
+#                 'status': "success",
+#                 'message': "Restaurant created successfully",
+#                 'restaurant': serializer.data
+#             })
+#             return Response(data, status=status.HTTP_201_CREATED)
+
+#         data = json.dumps({
+#             'status': "error",
+#             'message': serializer.errors
+#         })
+#         return Response(data, status=status.HTTP_400_BAD_REQUEST)
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .serializers import CreateRestaurantSerializer
+# from .models import Restaurant
+from system_management.models import User
+import json
+
 @api_view(['POST'])
 # @permission_classes([IsAuthenticated])
 def create_restaurant_api(request):
@@ -129,7 +170,18 @@ def create_restaurant_api(request):
             status code:
     """
     if request.method == 'POST':
-        serializer = RestaurantSerializer(data=request.data)
+        manager_id = request.data.get('manager')  # Get manager ID from the request data
+
+        # Check if the manager is already assigned to a restaurant
+        if Restaurant.objects.filter(manager_id=manager_id).exists():
+            data = json.dumps({
+                'status': "error",
+                'message': "This manager is already assigned to a restaurant."
+            })
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+        # Proceed to create the restaurant if no duplicate is found
+        serializer = CreateRestaurantSerializer(data=request.data)
 
         if serializer.is_valid():
             serializer.save()
