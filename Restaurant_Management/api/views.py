@@ -26,7 +26,9 @@ from rest_framework.response import Response
 from rest_framework import status
 import json
 
-from .serializers import RestaurantSerializer
+from system_management.models import User, UserType
+
+from .serializers import  GetAllRestaurantManagerSerializer, RestaurantSerializer
 
 @api_view(['GET'])
 def get_all_restaurants_api(request):
@@ -68,6 +70,46 @@ def get_all_restaurants_api(request):
             'message': "Invalid request method."
         })
         return Response(data, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+
+@api_view(['GET'])
+# @permission_classes([IsAuthenticated])  # Uncomment when authentication is required
+def get_all_restaurants_managers_api(request):
+    """
+    API endpoint to get all restaurant managers.
+    
+    Returns:
+        Response:
+            data:
+                status:
+                message:
+                restaurant_managers:
+            status code:
+    """
+    try:
+        restaurant_admin_type = UserType.objects.get(name="RESTAURANT_ADMIN")
+        managers = User.objects.filter(user_type=restaurant_admin_type)
+        
+        if managers.exists():
+            serializer = GetAllRestaurantManagerSerializer(managers, many=True)
+            data = json.dumps({
+                'status': "success",
+                'message': "Restaurant managers retrieved successfully",
+                'restaurant_managers': serializer.data
+            })
+            return Response(data, status=status.HTTP_200_OK)
+        else:
+            return Response(json.dumps({
+                'status': "error",
+                'message': "No restaurant managers found"
+            }), status=status.HTTP_404_NOT_FOUND)
+
+    except UserType.DoesNotExist:
+        return Response(json.dumps({
+            'status': "error",
+            'message': "UserType RESTAURANT_ADMIN not found"
+        }), status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

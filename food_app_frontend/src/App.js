@@ -32,7 +32,7 @@ function App() {
             <Route path="/add-admin" element={<AddAdmin />} />
             <Route path="/update-admin" element={<UpdateUserModal />} />
             <Route path="/restaurent_management" element={<Restaurent_management />} />
-            <Route path="/add-restaurent" element={<AddRestaurent />} />
+            <Route path="/add-restaurant" element={<AddRestaurent />} />
           </Routes>
     
    
