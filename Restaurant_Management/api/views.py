@@ -28,7 +28,7 @@ import json
 
 from system_management.models import User, UserType
 
-from .serializers import  CreateRestaurantSerializer, GetAllRestaurantManagerSerializer, RestaurantSerializer
+from .serializers import  CreateRestaurantSerializer, GetAllRestaurantManagerSerializer, GetManagerEmailSerializer, ManagerUpdateSerializer, RestaurantSerializer
 
 @api_view(['GET'])
 def get_all_restaurants_api(request):
@@ -172,7 +172,6 @@ def create_restaurant_api(request):
     if request.method == 'POST':
         manager_id = request.data.get('manager')  # Get manager ID from the request data
 
-        # Check if the manager is already assigned to a restaurant
         if Restaurant.objects.filter(manager_id=manager_id).exists():
             data = json.dumps({
                 'status': "error",
@@ -197,3 +196,74 @@ def create_restaurant_api(request):
             'message': serializer.errors
         })
         return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+
+@api_view(['POST', 'PUT'])
+def update_manager_api(request):
+    if request.method in ['POST', 'PUT']:
+        body = json.loads(request.body) if isinstance(request.body, bytes) else request.data
+
+        serializer = ManagerUpdateSerializer(data=body)
+        if serializer.is_valid():
+            validated_data = serializer.validated_data
+            manager_id = validated_data.get('manager_id')
+
+            try:
+                manager = User.objects.get(id=manager_id, user_type__name='RESTAURANT_ADMIN')
+            except User.DoesNotExist:
+                return Response({
+                    'status': "error",
+                    'message': f"Manager with id {manager_id} does not exist or does not have the 'RESTAURANT_ADMIN' role."
+                }, status=status.HTTP_400_BAD_REQUEST)
+
+            # Update manager data
+            serializer.update(manager, validated_data)
+
+            return Response({
+                'status': "success",
+                'message': "Manager updated successfully.",
+                'manager_email': manager.email,
+                'restaurant': manager.managed_restaurant.name
+            }, status=status.HTTP_200_OK)
+        else:
+            return Response({
+                'status': "error",
+                'message': str(serializer.errors)
+            }, status=status.HTTP_400_BAD_REQUEST)
+    else:
+        return Response({
+            'status': "error",
+            'message': "Invalid request method."
+        }, status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+@api_view(['POST'])
+def get_manager_email_api(request):
+    body = json.loads(request.body) if isinstance(request.body, bytes) else request.data
+
+    serializer = GetManagerEmailSerializer(data=body)
+
+    if serializer.is_valid():
+            validated_data = serializer.validated_data
+            manager_id = validated_data.get('manager_id')
+
+    if not manager_id:
+        return Response({
+            'status': "error",
+            'message': "Manager ID is required."
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        manager = User.objects.get(id=manager_id, user_type__name='RESTAURANT_ADMIN')
+    except User.DoesNotExist:
+        return Response({
+            'status': "error",
+            'message': f"Manager with id {manager_id} does not exist or does not have the 'RESTAURANT_ADMIN' role."
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+    return Response({
+        'status': "success",
+        'manager_email': manager.email
+    }, status=status.HTTP_200_OK)

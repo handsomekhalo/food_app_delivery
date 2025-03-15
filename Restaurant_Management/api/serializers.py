@@ -47,3 +47,60 @@ class CreateRestaurantSerializer(serializers.ModelSerializer):
         if value.user_type.name != 'RESTAURANT_ADMIN':
             raise serializers.ValidationError("Manager must have 'RESTAURANT_ADMIN' user type.")
         return value
+
+
+
+class ManagerUpdateSerializer(serializers.Serializer):
+    manager_id = serializers.IntegerField()
+    first_name = serializers.CharField(max_length=100, required=False)
+    last_name = serializers.CharField(max_length=100, required=False)
+    email = serializers.EmailField(required=True)
+    restaurant_id = serializers.IntegerField()
+
+    def validate_restaurant_id(self, value):
+        """Validate that the restaurant exists."""
+        try:
+            restaurant = Restaurant.objects.get(id=value)
+        except Restaurant.DoesNotExist:
+            raise serializers.ValidationError(f"Restaurant with id {value} does not exist.")
+        return value
+
+    def validate_manager_id(self, value):
+        """Validate that the manager exists and is of type 'RESTAURANT_ADMIN'."""
+        try:
+            manager = User.objects.get(id=value, user_type__name='RESTAURANT_ADMIN')
+        except User.DoesNotExist:
+            raise serializers.ValidationError(f"Manager with id {value} does not exist or does not have the 'RESTAURANT_ADMIN' role.")
+        return value
+
+    def validate_email(self, value):
+        """Validate that the email is unique among managers."""
+        manager_id = self.initial_data.get('manager_id')
+        if User.objects.exclude(id=manager_id).filter(email=value).exists():
+            raise serializers.ValidationError(f"Manager with email {value} already exists.")
+        return value
+
+    def update(self, instance, validated_data):
+        """Update the manager's details."""
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.email = validated_data.get('email', instance.email)
+        
+        # Update the restaurant if necessary
+        restaurant_id = validated_data.get('restaurant_id', None)
+        if restaurant_id:
+            restaurant = Restaurant.objects.get(id=restaurant_id)
+            instance.managed_restaurant = restaurant
+        
+        instance.save()
+        return instance
+    
+
+
+# class GeManagerEmailSerializer(serializers.ModelSerializer):
+
+#     class Meta:
+#         model = Restaurant
+#         fields = ['manager_id',]
+class GetManagerEmailSerializer(serializers.Serializer):
+    manager_id = serializers.IntegerField(required=True)
