@@ -142,6 +142,7 @@ def create_restaurant(request):
 
         # Parse incoming request data (data from frontend)
         data = json.loads(request.body)
+        print('data', data)
         restaurant_name = data.get('name')
         restaurant_address = data.get('address')
         restaurant_phone_number = data.get('phone_number')
@@ -172,6 +173,7 @@ def create_restaurant(request):
 
         # Send POST request to the API endpoint to create the restaurant
         response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
+        print('response_data', response_data)
 
         # Check if the response is successful (status code 201)
         if response_data.get('status_code') == 201:

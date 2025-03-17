@@ -153,50 +153,89 @@ from .serializers import CreateRestaurantSerializer
 from system_management.models import User
 import json
 
+# @api_view(['POST'])
+# # @permission_classes([IsAuthenticated])
+# def create_restaurant_api(request):
+#     """
+#     API endpoint to create a new restaurant.
+
+#     Args:
+#         request:
+#     Returns:
+#         Response:
+#             data:
+#                 status:
+#                 message:
+#                 restaurant:
+#             status code:
+#     """
+#     if request.method == 'POST':
+#         manager_id = request.data.get('manager')  # Get manager ID from the request data
+
+#         if Restaurant.objects.filter(manager_id=manager_id).exists():
+#             data = json.dumps({
+#                 'status': "error",
+#                 'message': "This manager is already assigned to a restaurant."
+#             })
+#             return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
+#         # Proceed to create the restaurant if no duplicate is found
+#         serializer = CreateRestaurantSerializer(data=request.data)
+
+#         if serializer.is_valid():
+#             serializer.save()
+#             data = json.dumps({
+#                 'status': "success",
+#                 'message': "Restaurant created successfully",
+#                 'restaurant': serializer.data
+#             })
+#             return Response(data, status=status.HTTP_201_CREATED)
+
+#         data = json.dumps({
+#             'status': "error",
+#             'message': serializer.errors
+#         })
+#         return Response(data, status=status.HTTP_400_BAD_REQUEST)
+
 @api_view(['POST'])
-# @permission_classes([IsAuthenticated])
 def create_restaurant_api(request):
     """
     API endpoint to create a new restaurant.
-
-    Args:
-        request:
-    Returns:
-        Response:
-            data:
-                status:
-                message:
-                restaurant:
-            status code:
     """
     if request.method == 'POST':
-        manager_id = request.data.get('manager')  # Get manager ID from the request data
+        manager_id = request.data.get('manager') 
+        print('manager_id',manager_id)
 
+        # Check if the manager is already assigned to another restaurant
         if Restaurant.objects.filter(manager_id=manager_id).exists():
-            data = json.dumps({
+            return Response({
                 'status': "error",
-                'message': "This manager is already assigned to a restaurant."
-            })
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+                'message': "This manager is already assigned to another restaurant."
+            }, status=status.HTTP_400_BAD_REQUEST)
 
         # Proceed to create the restaurant if no duplicate is found
         serializer = CreateRestaurantSerializer(data=request.data)
 
         if serializer.is_valid():
-            serializer.save()
-            data = json.dumps({
-                'status': "success",
-                'message': "Restaurant created successfully",
-                'restaurant': serializer.data
-            })
-            return Response(data, status=status.HTTP_201_CREATED)
+            try:
+                serializer.save()
+                return Response(json.dumps({
+                    'status': "success",
+                    'message': "Restaurant created successfully",
+                    'restaurant': serializer.data
+                }), status=status.HTTP_201_CREATED)
+            except Exception as e:
+                # Log the exception for debugging
+                print(f"Error saving restaurant: {e}")
+                return Response(json.dumps({
+                    'status': "error",
+                    'message': "Manager already assigned to another restaurant."
+                }), status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        data = json.dumps({
+        return Response(json.dumps({
             'status': "error",
             'message': serializer.errors
-        })
-        return Response(data, status=status.HTTP_400_BAD_REQUEST)
-
+        }), status=status.HTTP_400_BAD_REQUEST)
 
 
 

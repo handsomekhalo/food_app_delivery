@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'system_management',
     "Restaurant_Management",
+    "food_management",
     'corsheaders',
 
 ]
