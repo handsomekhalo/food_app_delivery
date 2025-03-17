@@ -33,6 +33,12 @@ const SideBar = () => {
         <li>
           <Link to="/restaurent_management" className="text-dark fw-bold d-block py-2">Restaurent Management</Link>
         </li>
+        <li>
+          <Link to="/food_management" className="text-dark fw-bold d-block py-2">Food Management</Link>
+        </li>
+        <li>
+          <Link to="/category_management" className="text-dark fw-bold d-block py-2">Category Management</Link>
+        </li>
         {/* Add more menu items as needed */}
       </ul>
     </div>

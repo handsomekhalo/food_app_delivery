@@ -13,6 +13,10 @@ import { AuthProvider } from './AuthContext';
 import UpdateUserModal from './Components/System_Management_Components/Dashboard/UpdateUserModal';
 import Restaurent_management from './Components/Restaurent_Components/Restaurent_management';
 import AddRestaurent from './Components/Restaurent_Components/AddRestaurent';
+import FoodManagement from './Components/Food_Management_Component/Food_Management';
+import AddFood from './Components/Food_Management_Component/AddFood';
+import CategoryManagement from './Components/CategoryComponents/ManageCategory';
+import AddCategory from './Components/CategoryComponents/AddCategory';
 
 function App() {
   return (
@@ -33,6 +37,11 @@ function App() {
             <Route path="/update-admin" element={<UpdateUserModal />} />
             <Route path="/restaurent_management" element={<Restaurent_management />} />
             <Route path="/add-restaurant" element={<AddRestaurent />} />
+            <Route path="/food_management" element={<FoodManagement />} />
+            <Route path="/add_food" element={<AddFood />} />
+            <Route path="category_management" element={<CategoryManagement />} />
+            <Route path="add_category" element={<AddCategory />} />
+
           </Routes>
     
    

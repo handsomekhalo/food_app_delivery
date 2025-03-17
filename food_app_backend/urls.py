@@ -25,6 +25,8 @@ urlpatterns = [
     path('system_management_api/', include('system_management.api.urls')),
     path('Restaurant_Management_api/', include('Restaurant_Management.api.urls')),
     path('Restaurant_Management/', include('Restaurant_Management.urls')),
+    # path('food_management_api/', include('food_management.api.urls')),
+    # path('food_management/', include('food_management.urls')),
 
     # food_management
 
