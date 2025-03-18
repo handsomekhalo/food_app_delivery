@@ -71,6 +71,7 @@ ROOT_URLCONF = 'food_app_backend.urls'
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'rest_framework.authentication.TokenAuthentication',
+        
 
     ),
     'EXPIRY_MINUTES': 30,  # Token will expire after 30 minutes
