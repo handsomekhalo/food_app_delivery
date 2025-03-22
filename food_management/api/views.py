@@ -9,20 +9,24 @@ from Restaurant_Management.models import Restaurant
 
 
 
-
+@api_view(['POST'])
 def create_category_api(request):
     """
     API endpoint to create a new category.
     """
     if request.method == 'POST':
-        restaurant_id = request.data.get('restaurant')
+        restaurant_id = request.data.get('restaurant_id')
+        print('restaurant_id',restaurant_id)
         title = request.data.get('title')
+        print('title',title)
 
 
         # Ensure restaurant exists
         try:
             restaurant = Restaurant.objects.get(id=restaurant_id)
+            print('reaturant exists',restaurant)
         except Restaurant.DoesNotExist:
+            print('no exiat')
             return Response(json.dumps({
                 'status': "error",
                 'message': "Restaurant does not exist."
@@ -30,15 +34,18 @@ def create_category_api(request):
 
         # Check if a category with the same title exists in the restaurant
         if Category.objects.filter(title=title, restaurant=restaurant).exists():
+            print('Category exists')
             return Response(json.dumps({
                 'status': "error",
                 'message': "A category with this title already exists for this restaurant."
             }), status=status.HTTP_400_BAD_REQUEST)
 
         # Proceed to create the category
+        print('check serlalizer')
         serializer = CreateCategorySerializer(data=request.data)
         
         if serializer.is_valid():
+            print('serializer valid')
             try:
                 category = serializer.save()
                 return Response(json.dumps({
@@ -47,6 +54,7 @@ def create_category_api(request):
                     'category': serializer.data
                 }), status=status.HTTP_201_CREATED)
             except Exception as e:
+                print('serializer invalid')
                 print(f"Error saving category: {e}")
                 return Response(json.dumps({
                     'status': "error",
@@ -74,34 +82,6 @@ def get_all_categories_api(request):
 
 
 
-
-# @api_view(['PUT', 'POST'])
-# def update_category(request, category_id):
-#     """
-#     API endpoint to update a category.
-#     """
-#     try:
-#         category = Category.objects.get(id=category_id)
-#     except Category.DoesNotExist:
-#         return Response(json.dumps({
-#             'status': "error",
-#             'message': "Category not found."
-#         }), status=status.HTTP_404_NOT_FOUND)
-
-#     serializer = UpdateCategorySerializer(category, data=request.data, partial=True)
-
-#     if serializer.is_valid():
-#         category = serializer.save()
-#         return Response(json.dumps({
-#             'status': "success",
-#             'message': "Category updated successfully",
-#             'category': serializer.data
-#         }), status=status.HTTP_200_OK)
-
-#     return Response(json.dumps({
-#         'status': "error",
-#         'message': serializer.errors
-#     }), status=status.HTTP_400_BAD_REQUEST)
 @api_view(['PUT', 'POST'])
 def update_category_api(request):
     """

@@ -15,7 +15,7 @@ const fetchCategories = async (authToken) => {
 };
 
 const deleteCategory = async (authToken, id, imageName) => {
-  const response = await axios.delete(`http://localhost:8000/category_management/delete_category/${id}/`, {
+  const response = await axios.delete(`http://localhost:8000/category_management/delete_category/`, {
     headers: { Authorization: `Token ${authToken}` },
     data: { image_name: imageName },
   });

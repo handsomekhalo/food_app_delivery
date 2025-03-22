@@ -25,45 +25,6 @@ const AddRestaurant = () => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("info");
 
-//   // Fetch Restaurant Managers
-//   useEffect(() => {
-//     const fetchManagers = async () => {
-//       if (!authToken) {
-//         setMessage("Authentication required. Please login again.");
-//         setMessageType("danger");
-//         return;
-//       }
-
-//       try {
-//         const response = await axios.get(
-//           "http://127.0.0.1:8000/Restaurant_Management/get_all_restaurant_managers/",
-//           {
-//             headers: {
-//               Authorization: `Token ${authToken}`,
-//               "Content-Type": "application/json",
-//               "X-CSRFToken": csrfToken,
-//             },
-//             withCredentials: true,
-//           }
-//         );
-
-//         if (response.data.status === "success") {
-//           setManagers(response.data.restaurant_managers || []);
-//         } else {
-//           setMessage(response.data.message || "Failed to fetch managers");
-//           setMessageType("warning");
-//         }
-//       } catch (error) {
-//         setMessage(`Error: ${error.response?.data?.message || error.message}`);
-//         setMessageType("danger");
-//       }
-//     };
-
-//     fetchManagers();
-//   }, [authToken, csrfToken]);
-
-//The first useEffect will fetch the CSRF token and store it in the csrfToken state.
-//Once the CSRF token is set, the second part fetches the list of restaurant managers using the authToken and csrfToken.
 
 useEffect(() => {
     // Fetch CSRF token
@@ -79,6 +40,8 @@ useEffect(() => {
       .catch((error) => {
         console.error("CSRF Token Fetch Error:", error);
       });
+
+      
   
     // Fetch Restaurant Managers
     const fetchManagers = async () => {
