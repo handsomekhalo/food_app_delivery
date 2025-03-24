@@ -22,14 +22,12 @@ def create_category(request):
         }, status=405)
     
     try:
-        print('start execution')
         # Extract token from session or headers
         token = request.session.get("token") or request.headers.get("Authorization", "").split("Token ")[-1]
         
         if token:
             request.session["token"] = token
             request.session.modified = True
-            print('token', token)
         
         if not token:
             return JsonResponse({
@@ -42,18 +40,17 @@ def create_category(request):
         featured = request.POST.get('featured')  # Will always be 'Yes' or 'No'
         active = request.POST.get('active') 
         restaurant_id = request.POST.get('restaurant')    # Will always be 'Yes' or 'No'
-        print('restaurant_id',restaurant_id)
         
-        print('title', title)
-        print('featured', featured)
-        print('active', active)
+        
+        
+       
 
         # Handle file upload
         image = None
-        print('Checking for uploaded image...')
+        
         if 'image' in request.FILES:
             uploaded_image = request.FILES['image']
-            print('Uploaded file:', uploaded_image)
+            
 
             try:
                 image = handle_image_upload(uploaded_image)
@@ -84,7 +81,6 @@ def create_category(request):
             "active": active,
             "restaurant_id" :restaurant_id,
         })
-        print('payload', payload)
         
        
         headers = {
@@ -92,7 +88,6 @@ def create_category(request):
             'Content-Type': 'application/json',
         }
 
-        print('headers', headers)
         
         # Send POST request to the API endpoint to create the category
         response_data = api_connection(method="POST", url=url, headers=headers, data=payload)
@@ -119,7 +114,6 @@ def create_category(request):
 
 def handle_image_upload(image_file):
     if not image_file:
-        print('[no image]')
         return None
 
     file_name = f"category_images/{image_file.name}"  # Define the file path in S3
@@ -132,8 +126,6 @@ def handle_image_upload(image_file):
     
 
 
-
-
 @csrf_exempt
 def get_all_categories(request):
     """
@@ -141,12 +133,16 @@ def get_all_categories(request):
     """
     if request.method == "GET":
         try:
-            # Retrieve authentication token from session or headers
-            token = request.session.get("token") or request.headers.get("Authorization", "").split("Token ")[-1]
+            
+            restaurant_id = request.GET.get('restaurant_id')
 
-            if token:
-                request.session["token"] = token
-                request.session.modified = True
+            if not restaurant_id:
+                return JsonResponse({
+                    "status": "error",
+                    "message": "restaurant_id is required"
+                })
+
+            token = request.session.get("token") or request.headers.get("Authorization", "").split("Token ")[-1]
 
             if not token:
                 return JsonResponse({
@@ -154,23 +150,24 @@ def get_all_categories(request):
                     "message": "Token not found in session or headers"
                 })
 
-            # API call to fetch all users with RESTAURANT_ADMIN type
-            url = f"{host_url(request)}{reverse('get_all_categories_api')}"
-            payload = json.dumps({'token': token})
+            request.session["token"] = token
+            request.session.modified = True
+
+            url = f"{host_url(request)}{reverse_lazy('get_all_categories_api')}"
+            payload = json.dumps({'token': token,
+                                  'restaurant_id': restaurant_id})
             headers = {
                 'Authorization': f'Token {token}',
                 'Content-Type': constants.JSON_APPLICATION
             }
 
             response_data = api_connection(method="GET", url=url, headers=headers, data=payload)
-
-            managers = []
-            if response_data.get('status') == 'success':
-                managers = response_data.get('restaurant_managers', [])
+            categories = response_data.get('categories', []) if response_data.get('status') == 'success' else []
+            
 
             return JsonResponse({
                 'status': 'success',
-                'restaurant_managers': managers
+                'categories': categories
             })
 
         except Exception as e:

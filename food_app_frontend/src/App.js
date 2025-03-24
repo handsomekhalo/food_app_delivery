@@ -17,6 +17,7 @@ import FoodManagement from './Components/Food_Management_Component/Food_Manageme
 import AddFood from './Components/Food_Management_Component/AddFood';
 import CategoryManagement from './Components/CategoryComponents/ManageCategory';
 import AddCategory from './Components/CategoryComponents/AddCategory';
+import ViewCategories from './Components/CategoryComponents/ViewCategories';
 
 function App() {
   return (
@@ -39,8 +40,10 @@ function App() {
             <Route path="/add-restaurant" element={<AddRestaurent />} />
             <Route path="/food_management" element={<FoodManagement />} />
             <Route path="/add_food" element={<AddFood />} />
-            <Route path="category_management" element={<CategoryManagement />} />
-            <Route path="add_category" element={<AddCategory />} />
+            <Route path="/category_management" element={<CategoryManagement />} />
+            <Route path="/add_category" element={<AddCategory />} />
+            <Route path="/view_categories" element={<ViewCategories />} />
+
 
           </Routes>
     

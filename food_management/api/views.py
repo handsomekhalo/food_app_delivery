@@ -67,18 +67,51 @@ def create_category_api(request):
         }), status=status.HTTP_400_BAD_REQUEST)
     
 
+
 @api_view(['GET'])
 def get_all_categories_api(request):
     """
-    API endpoint to retrieve all categories.
+    API endpoint to retrieve all categories for a specific restaurant.
     """
-    categories = Category.objects.all()
-    serializer = CategorySerializer(categories, many=True)
     
+    data = json.loads(request.body)  # Load JSON data
+    restaurant_id = data.get('restaurant_id')
+    print('restaurant_id',restaurant_id)
+
+    categories = Category.objects.filter(restaurant_id=restaurant_id)
+    # categories = Category.objects.filter(restaurant_id=restaurant_id)
+
+    if not categories.exists():
+        return Response(json.dumps({
+            'status': "error",
+            'message': "No categories found for this restaurant."
+        }), status=status.HTTP_404_NOT_FOUND)
+
+    serializer = CategorySerializer(categories, many=True)
+
     return Response(json.dumps({
         'status': "success",
         'categories': serializer.data
     }), status=status.HTTP_200_OK)
+
+# @api_view(['GET'])
+# def get_all_categories_api(request):
+#     """
+#     API endpoint to retrieve all categories.
+#     """
+
+#     print('executing')
+#     data = json.loads(request.body)  # Load JSON data
+#     restaurant_id = data.get('restaurant_id')
+
+#     categories = Category.objects.filter(restaurant_id=restaurant_id)
+#     # categories = Category.objects.all()
+#     serializer = CategorySerializer(categories, many=True)
+    
+#     return Response(json.dumps({
+#         'status': "success",
+#         'categories': serializer.data
+#     }), status=status.HTTP_200_OK)
 
 
 
